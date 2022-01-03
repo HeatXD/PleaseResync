@@ -2,8 +2,6 @@ using System.Diagnostics;
 
 namespace PleaseResync
 {
-    public class ResyncAction { }
-
     /// <summary>
     /// Session is responsible for managing a pool of devices wanting to play your game together.
     /// Each device must create a Session on their end and make sure all devices IDs, numbers of players for each device, are the same on every device.
@@ -79,6 +77,6 @@ namespace PleaseResync
         /// This must be called after you set your local inputs for this frame and simulated your game frame with the inputs provided by the session.
         /// </summary>
         /// <returns>an array of actions to perform in order before calling AdvanceFrame again</returns>
-        public abstract ResyncAction[] AdvanceFrame();
+        public abstract SessionAction[] AdvanceFrame();
     }
 }

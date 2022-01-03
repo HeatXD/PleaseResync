@@ -16,7 +16,7 @@ namespace PleaseResync
         public int RemoteFrame;
         public int RemoteFrameAdvantage;
 
-        // todo Add IPeerNetAdaper
+        public SessionAdapter Adapter;
 
         public Device(int id, uint playerCount, DeviceType deviceType)
         {
@@ -26,6 +26,11 @@ namespace PleaseResync
 
             RemoteFrame = 0;
             RemoteFrameAdvantage = 0;
+        }
+
+        public Device(int id, uint playerCount, DeviceType deviceType, SessionAdapter adapter) : this(id, playerCount, deviceType)
+        {
+            Adapter = adapter;
         }
     }
 }
