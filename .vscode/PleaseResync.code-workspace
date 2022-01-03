@@ -5,6 +5,10 @@
     }
   ],
   "settings": {
+    "files.exclude": {
+      "**/bin": true,
+      "**/obj": true
+    },
     "editor.formatOnSave": true,
     "gitlens.codeLens.enabled": false,
     "csharp.referencesCodeLens.enabled": false

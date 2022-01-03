@@ -4,20 +4,20 @@ namespace PleaseResync
 {
     class TimeSync
     {
+        public const int InitialFrame = 0;
         public const int MaxRollbackFrames = 7;
         public const int FrameAdvantageLimit = 5;
-        public const int InitialFrame = 0;
+
+        public int SyncFrame;
         public int LocalFrame;
         public int RemoteFrame;
-        public int SyncFrame;
         public int RemoteFrameAdvantage;
 
         public TimeSync()
         {
+            SyncFrame = InitialFrame;
             LocalFrame = InitialFrame;
             RemoteFrame = InitialFrame;
-            SyncFrame = InitialFrame;
-
             RemoteFrameAdvantage = 0;
         }
 
@@ -28,7 +28,7 @@ namespace PleaseResync
 
             foreach (var device in devices)
             {
-                if (device.Type == DeviceType.REMOTE)
+                if (device.Type == Device.DeviceType.REMOTE)
                 {
                     if (device.RemoteFrame < minRemoteFrame || device.RemoteFrame == InitialFrame - 1)
                     {
@@ -51,9 +51,8 @@ namespace PleaseResync
 
         public bool ShouldRollback()
         {
-            //No need to rollback if we don't have a frame after the previous sync frame to synchronize to.
+            // No need to rollback if we don't have a frame after the previous sync frame to synchronize to.
             return LocalFrame > SyncFrame && RemoteFrame > SyncFrame;
         }
     }
-
 }

@@ -1,24 +1,29 @@
 namespace PleaseResync
 {
-    public enum DeviceType{
-        LOCAL,
-        REMOTE,
-        SPECTATOR
-    }
     public class Device
     {
-        public int Id;
+        public enum DeviceType
+        {
+            LOCAL,
+            REMOTE,
+            SPECTATOR
+        }
+
+        public readonly int Id;
+        public readonly uint PlayerCount;
+        public readonly DeviceType Type;
+
         public int RemoteFrame;
         public int RemoteFrameAdvantage;
-        public int PlayerCount;
-        public DeviceType Type;
+
         // todo Add IPeerNetAdaper
-        public Device(int id, int playerCount, DeviceType deviceType)
+
+        public Device(int id, uint playerCount, DeviceType deviceType)
         {
             Id = id;
-            // no need for seperate functions anymore for local and remote devices
             Type = deviceType;
             PlayerCount = playerCount;
+
             RemoteFrame = 0;
             RemoteFrameAdvantage = 0;
         }

@@ -8,6 +8,5 @@ namespace PleaseResync
         {
             _timeSync = new TimeSync();
         }
-        
     }
 }
