@@ -1,0 +1,12 @@
+{
+  "folders": [
+    {
+      "path": ".."
+    }
+  ],
+  "settings": {
+    "editor.formatOnSave": true,
+    "gitlens.codeLens.enabled": false,
+    "csharp.referencesCodeLens.enabled": false
+  }
+}
