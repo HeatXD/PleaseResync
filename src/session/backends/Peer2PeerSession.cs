@@ -21,7 +21,6 @@ namespace PleaseResync
 
             Devices[deviceId] = new Device(deviceId, playerCount, Device.DeviceType.LOCAL);
         }
-
         public override void AddRemoteDevice(int deviceId, uint playerCount, SessionAdapter sessionAdapter)
         {
             Debug.Assert(Devices[deviceId] == null);
@@ -29,16 +28,23 @@ namespace PleaseResync
             Devices[deviceId] = new Device(deviceId, playerCount, Device.DeviceType.REMOTE, sessionAdapter);
         }
 
+        public override void DoPoll()
+        {
+            throw new System.NotImplementedException();
+        }
+        public override bool IsRunning()
+        {
+            throw new System.NotImplementedException();
+        }
+
         public override void SetFrameInputs(byte[] input)
         {
             throw new System.NotImplementedException();
         }
-
         public override byte[] GetFrameInputs()
         {
             throw new System.NotImplementedException();
         }
-
         public override List<SessionAction> AdvanceFrame()
         {
             throw new System.NotImplementedException();

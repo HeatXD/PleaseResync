@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace PleaseResync
 {
     /// <summary>
@@ -5,7 +7,7 @@ namespace PleaseResync
     /// </summary>
     public interface SessionAdapter
     {
-        void Send(object message);
-        object[] Receive();
+        void Send(SessionMessage message);
+        List<SessionMessage> Receive();
     }
 }

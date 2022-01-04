@@ -70,6 +70,15 @@ namespace PleaseResync
         public abstract void AddRemoteDevice(int deviceId, uint playerCount, SessionAdapter sessionAdapter);
 
         /// <summary>
+        /// DoPoll must be called periodically to give the Session a chance to perform some work and synchronize devices.
+        /// </summary>
+        public abstract void DoPoll();
+        /// <summary>
+        /// IsRunning returns true when all the Sessions are synchronized and ready to accept inputs.
+        /// </summary>
+        public abstract bool IsRunning();
+
+        /// <summary>
         /// SetFrameInputs sets this local device inputs for the current frame + frameDelay.
         /// This must be called before calling GetFrameInputs()
         /// </summary>
