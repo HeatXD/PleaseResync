@@ -7,7 +7,6 @@ namespace PleaseResync
         public const int InitialFrame = 0;
         public const int MaxRollbackFrames = 7;
         public const int FrameAdvantageLimit = 5;
-
         public int SyncFrame;
         public int LocalFrame;
         public int RemoteFrame;

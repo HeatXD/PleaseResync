@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace PleaseResync
 {
@@ -57,7 +58,7 @@ namespace PleaseResync
         /// <param name="deviceId">Unique number used to identify this local device. this number must be exactly the same in every Sessions for that particular device</param>
         /// <param name="playerCount">Number of players playing on this device. this number must be exactly the same in every Sessions for that particular device</param>
         /// <param name="networkAdapter">As the given device is not local to the Session, we must provide a way to communicate with that given device</param>
-        public abstract void AddRemoteDevice(int deviceId, uint playerCount, object networkAdapter);
+        public abstract void AddRemoteDevice(int deviceId, uint playerCount, SessionAdapter networkAdapter);
 
         /// <summary>
         /// SetFrameInputs sets this local device inputs for the current frame + frameDelay.
@@ -76,7 +77,7 @@ namespace PleaseResync
         /// AdvanceFrame will tell the session to increment the current frame by one and that you are ready to work on the next frame.
         /// This must be called after you set your local inputs for this frame and simulated your game frame with the inputs provided by the session.
         /// </summary>
-        /// <returns>an array of actions to perform in order before calling AdvanceFrame again</returns>
-        public abstract SessionAction[] AdvanceFrame();
+        /// <returns>a list of actions to perform in order before calling AdvanceFrame again</returns>
+        public abstract List<SessionAction> AdvanceFrame();
     }
 }
