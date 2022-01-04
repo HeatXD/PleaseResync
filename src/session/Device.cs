@@ -8,12 +8,14 @@ namespace PleaseResync
             REMOTE,
             SPECTATOR
         }
+
         public readonly int Id;
         public readonly uint PlayerCount;
         public readonly DeviceType Type;
         public int RemoteFrame;
         public int RemoteFrameAdvantage;
         public SessionAdapter Adapter;
+
         public Device(int id, uint playerCount, DeviceType deviceType)
         {
             Id = id;

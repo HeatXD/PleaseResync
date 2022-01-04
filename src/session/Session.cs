@@ -20,9 +20,14 @@ namespace PleaseResync
     /// </summary>
     public abstract class Session
     {
+        public const int LIMIT_INPUT_SIZE = 32;
         public const int LIMIT_DEVICE_COUNT = 4;
         public const int LIMIT_TOTAL_PLAYER_COUNT = 16;
 
+        /// <summary>
+        /// InputSize is the size in bits of the input for one player.
+        /// </summary>
+        protected uint InputSize;
         /// <summary>
         /// DeviceCount is the number of devices taking part in this session.
         /// </summary>
@@ -32,15 +37,19 @@ namespace PleaseResync
         /// </summary>
         protected readonly uint TotalPlayerCount;
 
+        /// <param name="inputSize">The size in bits of the input for one player.</param>
         /// <param name="deviceCount">The number of devices taking part in this session.</param>
         /// <param name="totalPlayerCount">The total number of players accross all devices taking part in this session.</param>
-        public Session(uint deviceCount, uint totalPlayerCount)
+        public Session(uint inputSize, uint deviceCount, uint totalPlayerCount)
         {
+            Debug.Assert(inputSize > 0);
+            Debug.Assert(inputSize <= LIMIT_INPUT_SIZE);
             Debug.Assert(deviceCount >= 2);
             Debug.Assert(deviceCount <= LIMIT_DEVICE_COUNT);
             Debug.Assert(totalPlayerCount >= 2);
             Debug.Assert(totalPlayerCount <= LIMIT_TOTAL_PLAYER_COUNT);
 
+            InputSize = inputSize;
             DeviceCount = deviceCount;
             TotalPlayerCount = totalPlayerCount;
         }
@@ -57,8 +66,8 @@ namespace PleaseResync
         /// </summary>
         /// <param name="deviceId">Unique number used to identify this local device. this number must be exactly the same in every Sessions for that particular device</param>
         /// <param name="playerCount">Number of players playing on this device. this number must be exactly the same in every Sessions for that particular device</param>
-        /// <param name="networkAdapter">As the given device is not local to the Session, we must provide a way to communicate with that given device</param>
-        public abstract void AddRemoteDevice(int deviceId, uint playerCount, SessionAdapter networkAdapter);
+        /// <param name="sessionAdapter">As the given device is not local to the Session, we must provide a way to communicate with that given device</param>
+        public abstract void AddRemoteDevice(int deviceId, uint playerCount, SessionAdapter sessionAdapter);
 
         /// <summary>
         /// SetFrameInputs sets this local device inputs for the current frame + frameDelay.

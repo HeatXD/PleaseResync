@@ -6,11 +6,13 @@ namespace PleaseResync
     {
         private TimeSync _timeSync;
         private List<Device> _devices;
+
         public Sync()
         {
             _timeSync = new TimeSync();
             _devices = new List<Device>();
         }
+
         // should be called after polling the remote devices
         public List<SessionAction> AdvanceSync()
         {
@@ -30,6 +32,7 @@ namespace PleaseResync
 
             return actions;
         }
+
         public void UpdateSyncFrame()
         {
             int finalFrame = _timeSync.RemoteFrame;

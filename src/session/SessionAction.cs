@@ -24,9 +24,9 @@ namespace PleaseResync
     public class SessionSaveGameAction : SessionAction
     {
     }
-    
+
     /// <summary>
-    /// SessionAdvanceFrameAction is an action you must fulfill when the session needs the game to advance forward. either to to perform a normal update or to resimulate an older frame
+    /// SessionAdvanceFrameAction is an action you must fulfill when the session needs the game to advance forwar: either to perform a normal update or to resimulate an older frame.
     /// </summary>
     public class SessionAdvanceFrameAction : SessionAction
     {
