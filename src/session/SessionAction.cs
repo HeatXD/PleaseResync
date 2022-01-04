@@ -24,11 +24,11 @@ namespace PleaseResync
     public class SessionSaveGameAction : SessionAction
     {
     }
-
+    
     /// <summary>
-    /// SessionResimulateFrameAction is an action you must fulfill when the session is needs to re-simulate an older frame due to a rollback.
+    /// SessionAdvanceFrameAction is an action you must fulfill when the session needs the game to advance forward. either to to perform a normal update or to resimulate an older frame
     /// </summary>
-    public class SessionResimulateFrameAction : SessionAction
+    public class SessionAdvanceFrameAction : SessionAction
     {
         public byte[] Inputs;
     }
