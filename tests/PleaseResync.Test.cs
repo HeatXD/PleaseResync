@@ -27,27 +27,22 @@ namespace PleaseResyncTest
             uint device3 = 2;
             uint device4 = 3;
 
-            var session1_listener = new UdpDeviceAdapter(session1, LOCAL_PORT_1, null, 0);
-            var session2_listener = new UdpDeviceAdapter(session2, LOCAL_PORT_2, null, 0);
-            var session3_listener = new UdpDeviceAdapter(session3, LOCAL_PORT_3, null, 0);
-            var session4_listener = new UdpDeviceAdapter(session4, LOCAL_PORT_4, null, 0);
-
-            session1.SetLocalDevice(device1, 1, 0, session1_listener);
+            session1.SetLocalDevice(device1, 1, 0, new UdpDeviceAdapter(session1, LOCAL_PORT_1, null, 0));
             session1.AddRemoteDevice(device2, 1, new UdpDeviceAdapter(session1, 0, LOCAL_ADDRESS, LOCAL_PORT_2));
             session1.AddRemoteDevice(device3, 1, new UdpDeviceAdapter(session1, 0, LOCAL_ADDRESS, LOCAL_PORT_3));
             session1.AddRemoteDevice(device4, 1, new UdpDeviceAdapter(session1, 0, LOCAL_ADDRESS, LOCAL_PORT_4));
 
-            session2.SetLocalDevice(device2, 1, 0, session2_listener);
+            session2.SetLocalDevice(device2, 1, 0, new UdpDeviceAdapter(session2, LOCAL_PORT_2, null, 0));
             session2.AddRemoteDevice(device1, 1, new UdpDeviceAdapter(session2, 0, LOCAL_ADDRESS, LOCAL_PORT_1));
             session2.AddRemoteDevice(device3, 1, new UdpDeviceAdapter(session2, 0, LOCAL_ADDRESS, LOCAL_PORT_3));
             session2.AddRemoteDevice(device4, 1, new UdpDeviceAdapter(session2, 0, LOCAL_ADDRESS, LOCAL_PORT_4));
 
-            session3.SetLocalDevice(device3, 1, 0, session3_listener);
+            session3.SetLocalDevice(device3, 1, 0, new UdpDeviceAdapter(session3, LOCAL_PORT_3, null, 0));
             session3.AddRemoteDevice(device1, 1, new UdpDeviceAdapter(session3, 0, LOCAL_ADDRESS, LOCAL_PORT_1));
             session3.AddRemoteDevice(device2, 1, new UdpDeviceAdapter(session3, 0, LOCAL_ADDRESS, LOCAL_PORT_2));
             session3.AddRemoteDevice(device4, 1, new UdpDeviceAdapter(session3, 0, LOCAL_ADDRESS, LOCAL_PORT_4));
 
-            session4.SetLocalDevice(device4, 1, 0, session4_listener);
+            session4.SetLocalDevice(device4, 1, 0, new UdpDeviceAdapter(session4, LOCAL_PORT_4, null, 0));
             session4.AddRemoteDevice(device1, 1, new UdpDeviceAdapter(session4, 0, LOCAL_ADDRESS, LOCAL_PORT_1));
             session4.AddRemoteDevice(device2, 1, new UdpDeviceAdapter(session4, 0, LOCAL_ADDRESS, LOCAL_PORT_2));
             session4.AddRemoteDevice(device3, 1, new UdpDeviceAdapter(session4, 0, LOCAL_ADDRESS, LOCAL_PORT_3));
