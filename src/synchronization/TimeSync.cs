@@ -27,7 +27,7 @@ namespace PleaseResync
 
             foreach (var device in devices)
             {
-                if (device.Type == Device.DeviceType.REMOTE)
+                if (device.Type == Device.DeviceType.Remote)
                 {
                     if (device.RemoteFrame < minRemoteFrame || device.RemoteFrame == InitialFrame - 1)
                     {
