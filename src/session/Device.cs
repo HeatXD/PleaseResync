@@ -40,11 +40,7 @@ namespace PleaseResync
 
         public void DoPoll()
         {
-            var messages = Adapter.Receive();
-            foreach (var message in messages)
-            {
-                System.Console.WriteLine($"I am {Id}:{Type} and I received message: {message}");
-            }
+            Adapter.Receive();
         }
 
         public void Verify()
@@ -56,7 +52,6 @@ namespace PleaseResync
 
             State = DeviceState.Verifying;
             Adapter.Send(message);
-            System.Console.WriteLine($"I am {Id}:{Type} and I sent: {message}");
         }
         public void VerifyConfirm(uint deviceId, uint playerCount)
         {

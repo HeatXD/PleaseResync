@@ -24,6 +24,9 @@ namespace PleaseResync
         public const uint LIMIT_DEVICE_COUNT = 4;
         public const uint LIMIT_TOTAL_PLAYER_COUNT = 16;
 
+        public abstract Device LocalDevice { get; }
+        public abstract Device[] AllDevices { get; }
+
         /// <summary>
         /// InputSize is the size in bits of the input for one player.
         /// </summary>

@@ -9,12 +9,14 @@ namespace PleaseResync
     {
         private const int SIO_UDP_CONNRESET = -1744830452;
 
+        private readonly Session _session;
         private readonly UdpClient _udpClient;
 
         private IPEndPoint _remoteEndPoint;
 
-        public UdpDeviceAdapter(ushort localPort, string remoteAddress, ushort remotePort)
+        public UdpDeviceAdapter(Session session, ushort localPort, string remoteAddress, ushort remotePort)
         {
+            _session = session;
             _udpClient = localPort == 0 ? new UdpClient() : new UdpClient(localPort);
             if (remoteAddress != null && remotePort > 0)
             {
@@ -27,7 +29,7 @@ namespace PleaseResync
         public void Send(DeviceMessage message)
         {
             var packet = MessagePackSerializer.Serialize(message);
-            System.Console.WriteLine($"Sent {message}");
+            System.Console.WriteLine($"[Session local device: {_session.LocalDevice.Id}] Sent {message}");
             _udpClient.Send(packet, packet.Length);
         }
 
@@ -38,7 +40,7 @@ namespace PleaseResync
             {
                 var packet = _udpClient.Receive(ref _remoteEndPoint);
                 var message = MessagePackSerializer.Deserialize<DeviceMessage>(packet);
-                System.Console.WriteLine($"Received {message}");
+                System.Console.WriteLine($"[Session local device: {_session.LocalDevice.Id}] Received {message}");
                 messages.Add(message);
             }
             return messages;
