@@ -9,7 +9,7 @@ namespace PleaseResync
         private Queue<GameInput> _lastPredictedInputs;
         private GameInput[] _inputs;
         private int _frameDelay;
-        public InputQueue(int inputSize, int playerCount)
+        public InputQueue(int inputSize, uint playerCount)
         {
             _lastPredictedInputs = new Queue<GameInput>();
             _inputs = new GameInput[QueueSize];
@@ -54,7 +54,7 @@ namespace PleaseResync
                 // add predicted frame to the queue. when later is proved that the input was right it will be removed.
                 _lastPredictedInputs.Enqueue(new GameInput(_inputs[frameOffset]));
             }
-            
+
             resultInput = new GameInput(_inputs[frameOffset]);
             return resultInput;
         }

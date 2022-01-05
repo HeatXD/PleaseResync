@@ -5,10 +5,18 @@ namespace PleaseResync
     public class Sync
     {
         private TimeSync _timeSync;
-
-        public Sync()
+        private Device[] _devices;
+        private InputQueue[] _deviceInputs;
+        public Sync(Device[] devices, int inputSize)
         {
+            _devices = devices;
             _timeSync = new TimeSync();
+            _deviceInputs = new InputQueue[_devices.Length];
+            
+            for (int i = 0; i < _deviceInputs.Length; i++)
+            {
+                _deviceInputs[i] = new InputQueue(inputSize, _devices[i].PlayerCount);
+            }
         }
 
         // should be called after polling the remote devices
@@ -25,6 +33,14 @@ namespace PleaseResync
                 {
                     actions.Add(new SessionAdvanceFrameAction());
                 }
+                actions.Add(new SessionSaveGameAction());
+            }
+
+            if (_timeSync.IsTimeSynced(_devices))
+            {
+                _timeSync.LocalFrame++;
+
+                actions.Add(new SessionAdvanceFrameAction());
                 actions.Add(new SessionSaveGameAction());
             }
 

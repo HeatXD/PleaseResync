@@ -11,7 +11,7 @@ namespace PleaseResync
         public byte[] Inputs;
         public int InputSize;
 
-        public GameInput(int frame, int inputSize, int playerCount)
+        public GameInput(int frame, int inputSize, uint playerCount)
         {
             Frame = frame;
             InputSize = inputSize;
@@ -21,7 +21,7 @@ namespace PleaseResync
         public GameInput(GameInput gameInput)
         {
             Debug.Assert(gameInput.Inputs != null);
-            
+
             Frame = gameInput.Frame;
             InputSize = gameInput.InputSize;
             Array.Copy(gameInput.Inputs, Inputs, gameInput.Inputs.Length);
