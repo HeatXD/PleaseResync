@@ -24,7 +24,7 @@ namespace PleaseResync
             Debug.Assert(LocalDevice == null, $"Local device {deviceId} was already set.");
             Debug.Assert(_allDevices[deviceId] == null, $"Local device {deviceId} was already set.");
 
-            _localDevice = new Device(deviceId, playerCount, Device.DeviceType.Local, deviceAdapter);
+            _localDevice = new Device(this, deviceId, playerCount, Device.DeviceType.Local, deviceAdapter);
             _allDevices[deviceId] = LocalDevice;
         }
         public override void AddRemoteDevice(uint deviceId, uint playerCount, DeviceAdapter deviceAdapter)
@@ -32,20 +32,23 @@ namespace PleaseResync
             Debug.Assert(LocalDevice != null, "SetLocalDevice must be called before any call to AddRemoteDevice.");
             Debug.Assert(_allDevices[deviceId] == null, $"Remote device {deviceId} was already set.");
 
-            _allDevices[deviceId] = new Device(deviceId, playerCount, Device.DeviceType.Remote, deviceAdapter);
-            _allDevices[deviceId].Verify();
+            _allDevices[deviceId] = new Device(this, deviceId, playerCount, Device.DeviceType.Remote, deviceAdapter);
         }
 
-        public override void DoPoll()
+        public override void Poll()
         {
             foreach (var device in _allDevices)
             {
-                device.DoPoll();
+                device.Poll();
             }
         }
         public override bool IsRunning()
         {
             return true;
+        }
+        public override void HandleMessage(Device from, DeviceMessage message)
+        {
+
         }
 
         public override void SetFrameInputs(byte[] input)

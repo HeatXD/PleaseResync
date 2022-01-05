@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace PleaseResync
 {
     public class Device
@@ -26,8 +24,15 @@ namespace PleaseResync
         public int RemoteFrameAdvantage;
         public DeviceState State;
 
-        public Device(uint deviceId, uint playerCount, DeviceType deviceType, DeviceAdapter deviceAdapter)
+        private readonly Session _session;
+
+        private uint _lastSendTime;
+        private uint _lastSequenceNumber;
+
+        public Device(Session session, uint deviceId, uint playerCount, DeviceType deviceType, DeviceAdapter deviceAdapter)
         {
+            _session = session;
+
             Id = deviceId;
             Type = deviceType;
             Adapter = deviceAdapter;
@@ -38,32 +43,63 @@ namespace PleaseResync
             RemoteFrameAdvantage = 0;
         }
 
-        public void DoPoll()
+        #region Polling
+
+        public void Poll()
         {
-            Adapter.Receive();
+            uint now = Platform.GetCurrentTimeMS();
+            uint nextInterval = 1000;
+
+            if (Type == Device.DeviceType.Remote)
+            {
+                switch (State)
+                {
+                    case DeviceState.Verifying:
+                        if (_lastSendTime + nextInterval < now)
+                        {
+                            Verify();
+                        }
+                        break;
+                    case DeviceState.Verified:
+                        // TODO: We are up and running
+                        break;
+                    case DeviceState.Disconnected:
+                        // TODO: Tear down connection
+                        break;
+                }
+            }
+
+            foreach (var (device, message) in Adapter.Receive())
+            {
+                _session.HandleMessage(device, message);
+            }
         }
 
-        public void Verify()
+        #endregion
+
+        #region State Machine
+
+        private void Verify()
         {
-            Debug.Assert(Type == Device.DeviceType.Remote);
-            Debug.Assert(Adapter != null);
+            SendMessage(new DeviceVerifyMessage { DeviceId = Id, PlayerCount = PlayerCount });
+        }
 
-            var message = new DeviceVerifyMessage { DeviceId = Id, PlayerCount = PlayerCount };
+        #endregion
 
-            State = DeviceState.Verifying;
+        #region Sending and Receiving messages
+
+        private void SendMessage(DeviceMessage message)
+        {
+            _lastSendTime = Platform.GetCurrentTimeMS();
+            message.SequenceNumber = _lastSequenceNumber++;
             Adapter.Send(message);
         }
-        public void VerifyConfirm(uint deviceId, uint playerCount)
-        {
-            Debug.Assert(Type == Device.DeviceType.Remote);
-            Debug.Assert(Adapter != null);
-        }
-        public void VerifyConfirmed(uint deviceId, uint playerCount)
-        {
-            Debug.Assert(Type == Device.DeviceType.Remote);
-            Debug.Assert(Adapter != null);
 
-            State = DeviceState.Verified;
+        private void HandleMessage(DeviceMessage message)
+        {
+
         }
+
+        #endregion
     }
 }

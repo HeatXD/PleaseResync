@@ -9,14 +9,16 @@ namespace PleaseResync
     {
         private const int SIO_UDP_CONNRESET = -1744830452;
 
+        private readonly uint _deviceId;
         private readonly Session _session;
         private readonly UdpClient _udpClient;
 
         private IPEndPoint _remoteEndPoint;
 
-        public UdpDeviceAdapter(Session session, ushort localPort, string remoteAddress, ushort remotePort)
+        public UdpDeviceAdapter(Session session, uint deviceId, ushort localPort, string remoteAddress, ushort remotePort)
         {
             _session = session;
+            _deviceId = deviceId;
             _udpClient = localPort == 0 ? new UdpClient() : new UdpClient(localPort);
             if (remoteAddress != null && remotePort > 0)
             {
@@ -29,19 +31,19 @@ namespace PleaseResync
         public void Send(DeviceMessage message)
         {
             var packet = MessagePackSerializer.Serialize(message);
-            System.Console.WriteLine($"[Session local device: {_session.LocalDevice.Id}] Sent {message}");
+            System.Console.WriteLine($"Sent {message}");
             _udpClient.Send(packet, packet.Length);
         }
 
-        public List<DeviceMessage> Receive()
+        public List<(Device, DeviceMessage)> Receive()
         {
-            var messages = new List<DeviceMessage>();
+            var messages = new List<(Device, DeviceMessage)>();
             while (_udpClient.Available > 0)
             {
                 var packet = _udpClient.Receive(ref _remoteEndPoint);
                 var message = MessagePackSerializer.Deserialize<DeviceMessage>(packet);
-                System.Console.WriteLine($"[Session local device: {_session.LocalDevice.Id}] Received {message}");
-                messages.Add(message);
+                System.Console.WriteLine($"Received {message}");
+                messages.Add((_session.AllDevices[_deviceId], message));
             }
             return messages;
         }
