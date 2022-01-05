@@ -8,6 +8,7 @@ namespace PleaseResync
     /// </summary>
     public class Peer2PeerSession : Session
     {
+        private Device LocalDevice;
         private readonly Device[] Devices;
 
         public Peer2PeerSession(uint inputSize, uint deviceCount, uint totalPlayerCount) : base(inputSize, deviceCount, totalPlayerCount)
@@ -15,26 +16,33 @@ namespace PleaseResync
             Devices = new Device[deviceCount];
         }
 
-        public override void AddLocalDevice(int deviceId, uint playerCount, uint frameDelay)
+        public override void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay, DeviceAdapter deviceAdapter)
         {
-            Debug.Assert(Devices[deviceId] == null);
+            Debug.Assert(LocalDevice == null, $"Local device {deviceId} was already set.");
+            Debug.Assert(Devices[deviceId] == null, $"Local device {deviceId} was already set.");
 
-            Devices[deviceId] = new Device(deviceId, playerCount, Device.DeviceType.LOCAL);
+            LocalDevice = new Device(deviceId, playerCount, Device.DeviceType.Local, deviceAdapter);
+            Devices[deviceId] = LocalDevice;
         }
-        public override void AddRemoteDevice(int deviceId, uint playerCount, SessionAdapter sessionAdapter)
+        public override void AddRemoteDevice(uint deviceId, uint playerCount, DeviceAdapter deviceAdapter)
         {
-            Debug.Assert(Devices[deviceId] == null);
+            Debug.Assert(LocalDevice != null, "SetLocalDevice must be called before any call to AddRemoteDevice.");
+            Debug.Assert(Devices[deviceId] == null, $"Remote device {deviceId} was already set.");
 
-            Devices[deviceId] = new Device(deviceId, playerCount, Device.DeviceType.REMOTE, sessionAdapter);
+            Devices[deviceId] = new Device(deviceId, playerCount, Device.DeviceType.Remote, deviceAdapter);
+            Devices[deviceId].Verify();
         }
 
         public override void DoPoll()
         {
-            throw new System.NotImplementedException();
+            foreach (var device in Devices)
+            {
+                device.DoPoll();
+            }
         }
         public override bool IsRunning()
         {
-            throw new System.NotImplementedException();
+            return true;
         }
 
         public override void SetFrameInputs(byte[] input)

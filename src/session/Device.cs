@@ -1,34 +1,74 @@
+using System.Diagnostics;
+
 namespace PleaseResync
 {
     public class Device
     {
         public enum DeviceType
         {
-            LOCAL,
-            REMOTE,
-            SPECTATOR
+            Local,
+            Remote,
+            Spectator
+        }
+        public enum DeviceState
+        {
+            Verify,
+            Verified,
+            Disconnected,
         }
 
-        public readonly int Id;
+        public readonly uint Id;
         public readonly uint PlayerCount;
         public readonly DeviceType Type;
+        public readonly DeviceAdapter Adapter;
+
         public int RemoteFrame;
         public int RemoteFrameAdvantage;
-        public SessionAdapter Adapter;
+        public DeviceState State;
 
-        public Device(int id, uint playerCount, DeviceType deviceType)
+        public Device(uint deviceId, uint playerCount, DeviceType deviceType, DeviceAdapter deviceAdapter)
         {
-            Id = id;
+            Id = deviceId;
             Type = deviceType;
+            Adapter = deviceAdapter;
             PlayerCount = playerCount;
 
+            State = DeviceState.Verify;
             RemoteFrame = 0;
             RemoteFrameAdvantage = 0;
         }
 
-        public Device(int id, uint playerCount, DeviceType deviceType, SessionAdapter adapter) : this(id, playerCount, deviceType)
+        public void DoPoll()
         {
-            Adapter = adapter;
+            var messages = Adapter.Receive();
+            foreach (var message in messages)
+            {
+                System.Console.WriteLine($"I am {Id}:{Type} and I received message: {message}");
+            }
+        }
+
+        public void Verify()
+        {
+            Debug.Assert(Type == Device.DeviceType.Remote);
+            Debug.Assert(Adapter != null);
+
+            var message = new DeviceVerifyMessage { DeviceId = Id, PlayerCount = PlayerCount };
+
+            State = DeviceState.Verify;
+            Adapter.Send(message);
+            System.Console.WriteLine($"I am {Id}:{Type} and I sent: {message}");
+        }
+        public void VerifyConfirm(uint deviceId, uint playerCount)
+        {
+            Debug.Assert(Type == Device.DeviceType.Remote);
+            Debug.Assert(Adapter != null);
+        }
+        public void VerifyConfirmed(uint deviceId, uint playerCount)
+        {
+            Debug.Assert(Type == Device.DeviceType.Remote);
+            Debug.Assert(Adapter != null);
+
+            State = DeviceState.Verified;
         }
     }
 }

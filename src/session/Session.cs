@@ -20,9 +20,9 @@ namespace PleaseResync
     /// </summary>
     public abstract class Session
     {
-        public const int LIMIT_INPUT_SIZE = 32;
-        public const int LIMIT_DEVICE_COUNT = 4;
-        public const int LIMIT_TOTAL_PLAYER_COUNT = 16;
+        public const uint LIMIT_INPUT_SIZE = 32;
+        public const uint LIMIT_DEVICE_COUNT = 4;
+        public const uint LIMIT_TOTAL_PLAYER_COUNT = 16;
 
         /// <summary>
         /// InputSize is the size in bits of the input for one player.
@@ -55,19 +55,22 @@ namespace PleaseResync
         }
 
         /// <summary>
-        /// AddLocalDevice tells that the given device is local to this Session and hosts the given player count.
+        /// SetLocalDevice tells that the given device is local to this Session and hosts the given player count.
+        /// You must call SetLocalDevice before calling AddRemoteDevice
         /// </summary>
         /// <param name="deviceId">Unique number used to identify this local device. this number must be exactly the same in every Sessions for that particular device</param>
         /// <param name="playerCount">Number of players playing on this device. this number must be exactly the same in every Sessions for that particular device</param>
         /// <param name="frameDelay">Number of frames to skip before registering local input, used to avoid rollbacking every frame.</param>
-        public abstract void AddLocalDevice(int deviceId, uint playerCount, uint frameDelay);
+        /// <param name="deviceAdapter">As the given device is local to the Session, we must provide a way to listen to other devices</param>
+        public abstract void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay, DeviceAdapter deviceAdapter);
         /// <summary>
         /// AddRemoteDevice tells that the given device is remote to this Session and hosts the given player count.
+        /// You must call SetLocalDevice before calling AddRemoteDevice
         /// </summary>
         /// <param name="deviceId">Unique number used to identify this local device. this number must be exactly the same in every Sessions for that particular device</param>
         /// <param name="playerCount">Number of players playing on this device. this number must be exactly the same in every Sessions for that particular device</param>
-        /// <param name="sessionAdapter">As the given device is not local to the Session, we must provide a way to communicate with that given device</param>
-        public abstract void AddRemoteDevice(int deviceId, uint playerCount, SessionAdapter sessionAdapter);
+        /// <param name="deviceAdapter">As the given device is not local to the Session, we must provide a way to communicate with that given device</param>
+        public abstract void AddRemoteDevice(uint deviceId, uint playerCount, DeviceAdapter deviceAdapter);
 
         /// <summary>
         /// DoPoll must be called periodically to give the Session a chance to perform some work and synchronize devices.
