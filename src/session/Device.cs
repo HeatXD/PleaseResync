@@ -12,7 +12,7 @@ namespace PleaseResync
         }
         public enum DeviceState
         {
-            Verify,
+            Verifying,
             Verified,
             Disconnected,
         }
@@ -33,7 +33,7 @@ namespace PleaseResync
             Adapter = deviceAdapter;
             PlayerCount = playerCount;
 
-            State = DeviceState.Verify;
+            State = DeviceState.Verifying;
             RemoteFrame = 0;
             RemoteFrameAdvantage = 0;
         }
@@ -54,7 +54,7 @@ namespace PleaseResync
 
             var message = new DeviceVerifyMessage { DeviceId = Id, PlayerCount = PlayerCount };
 
-            State = DeviceState.Verify;
+            State = DeviceState.Verifying;
             Adapter.Send(message);
             System.Console.WriteLine($"I am {Id}:{Type} and I sent: {message}");
         }

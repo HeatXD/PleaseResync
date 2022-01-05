@@ -10,29 +10,42 @@ namespace PleaseResync
         public const int NullFrame = -1;
         public int Frame;
         public byte[] Inputs;
+        public int InputSize;
         public GameInput(int frame, int inputSize, int totalPlayerCount)
         {
             Frame = frame;
+            InputSize = inputSize;
             Inputs = new byte[inputSize * totalPlayerCount];
         }
-
+        public void SetInputs(int playerOffset, int playerCount, byte[] deviceInputs)
+        {
+            Debug.Assert(deviceInputs != null);
+            Debug.Assert(playerOffset + (playerCount * InputSize) < Inputs.Length);
+            Debug.Assert(deviceInputs.Length == playerCount * InputSize);
+            
+            Array.Copy(deviceInputs, 0, Inputs, playerOffset, deviceInputs.Length);
+        }
         public bool Equal(GameInput other, bool inputsOnly)
         {
             if (!inputsOnly && Frame != other.Frame)
             {
                 Console.WriteLine("frames don't match: {0}, {1}", Frame, other.Frame);
             }
+            if (InputSize != other.InputSize)
+            {
+                Console.WriteLine("inputsize for a single player doesn't match: {0}, {1}", InputSize, other.InputSize);
+            }
             if (Inputs.Length != other.Inputs.Length)
             {
-               Console.WriteLine("sizes don't match: {0}, {1}", Inputs.Length, other.Inputs.Length);
+                Console.WriteLine("inputs array length don't match: {0}, {1}", Inputs.Length, other.Inputs.Length);
             }
             if (!Inputs.SequenceEqual(other.Inputs))
             {
-                Console.WriteLine("Inputs don't match\n");
+                Console.WriteLine("inputs don't match\n");
             }
-            Debug.Assert(Inputs.Length > 0 && other.Inputs.Length  > 0);
+            Debug.Assert(Inputs.Length > 0 && other.Inputs.Length > 0);
             return (inputsOnly || Frame == other.Frame) &&
-                   Inputs.Length == other.Inputs.Length  &&
+                   Inputs.Length == other.Inputs.Length &&
                    Inputs.SequenceEqual(other.Inputs);
         }
     }
