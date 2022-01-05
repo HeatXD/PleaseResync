@@ -54,6 +54,7 @@ namespace PleaseResync
                 // add predicted frame to the queue. when later is proved that the input was right it will be removed.
                 _lastPredictedInputs.Enqueue(new GameInput(_inputs[frameOffset]));
             }
+            
             resultInput = new GameInput(_inputs[frameOffset]);
             return resultInput;
         }
