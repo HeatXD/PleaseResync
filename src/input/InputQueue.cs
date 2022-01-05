@@ -25,10 +25,8 @@ namespace PleaseResync
             Debug.Assert(frame >= 0);
 
             frame += _frameDelay;
-
+            _inputs[frame % QueueSize] = new GameInput(input);
             _inputs[frame % QueueSize].Frame = frame;
-            _inputs[frame % QueueSize].InputSize = input.InputSize;
-            _inputs[frame % QueueSize].SetInputs(0, input.Inputs.Length / input.InputSize, input.Inputs);
         }
         public void SetFrameDelay(int frameDelay)
         {
