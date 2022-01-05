@@ -5,12 +5,10 @@ namespace PleaseResync
     public class Sync
     {
         private TimeSync _timeSync;
-        private List<Device> _devices;
 
         public Sync()
         {
             _timeSync = new TimeSync();
-            _devices = new List<Device>();
         }
 
         // should be called after polling the remote devices

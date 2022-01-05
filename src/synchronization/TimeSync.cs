@@ -20,7 +20,7 @@ namespace PleaseResync
             RemoteFrameAdvantage = 0;
         }
 
-        public bool IsTimeSynced(List<Device> devices)
+        public bool IsTimeSynced(Device[] devices)
         {
             int minRemoteFrame = InitialFrame - 1;
             int maxRemoteFrameAdvantage = 0;
@@ -40,7 +40,6 @@ namespace PleaseResync
                     }
                 }
             }
-
             // How far the client is ahead of the last reported frame by the remote clients           
             int localFrameAdvantage = LocalFrame - minRemoteFrame;
             // How different is the frame advantage reported by the remote clients and this one
