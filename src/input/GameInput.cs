@@ -4,26 +4,36 @@ using System.Linq;
 
 namespace PleaseResync
 {
-    // contains all the input for a given frame from all devices.
     public class GameInput
     {
         public const int NullFrame = -1;
         public int Frame;
         public byte[] Inputs;
         public int InputSize;
-        public GameInput(int frame, int inputSize, int totalPlayerCount)
+
+        public GameInput(int frame, int inputSize, int playerCount)
         {
             Frame = frame;
             InputSize = inputSize;
-            Inputs = new byte[inputSize * totalPlayerCount];
+            Inputs = new byte[inputSize * playerCount];
         }
-        public void SetInputs(int playerOffset, int playerCount, byte[] deviceInputs)
+
+        public GameInput(GameInput gameInput)
+        {
+            Debug.Assert(gameInput.Inputs != null);
+            
+            Frame = gameInput.Frame;
+            InputSize = gameInput.InputSize;
+            Array.Copy(gameInput.Inputs, Inputs, gameInput.Inputs.Length);
+        }
+
+        public void SetInputs(int offset, int playerCount, byte[] deviceInputs)
         {
             Debug.Assert(deviceInputs != null);
-            Debug.Assert(playerOffset + (playerCount * InputSize) < Inputs.Length);
+            Debug.Assert(offset + (playerCount * InputSize) < Inputs.Length);
             Debug.Assert(deviceInputs.Length == playerCount * InputSize);
-            
-            Array.Copy(deviceInputs, 0, Inputs, playerOffset, deviceInputs.Length);
+
+            Array.Copy(deviceInputs, 0, Inputs, offset, deviceInputs.Length);
         }
         public bool Equal(GameInput other, bool inputsOnly)
         {
@@ -46,6 +56,7 @@ namespace PleaseResync
             Debug.Assert(Inputs.Length > 0 && other.Inputs.Length > 0);
             return (inputsOnly || Frame == other.Frame) &&
                    Inputs.Length == other.Inputs.Length &&
+                   InputSize == other.InputSize &&
                    Inputs.SequenceEqual(other.Inputs);
         }
     }
