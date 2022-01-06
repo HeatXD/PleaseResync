@@ -2,18 +2,25 @@ namespace PleaseResync
 {
     public class Device
     {
+        #region Enums
+
         public enum DeviceType
         {
             Local,
             Remote,
             Spectator
         }
+
         public enum DeviceState
         {
             Verifying,
             Verified,
             Disconnected,
         }
+
+        #endregion
+
+        #region Publics
 
         public readonly uint Id;
         public readonly uint PlayerCount;
@@ -24,10 +31,16 @@ namespace PleaseResync
         public int RemoteFrameAdvantage;
         public DeviceState State;
 
+        #endregion
+
+        #region Privates
+
         private readonly Session _session;
 
         private uint _lastSendTime;
         private uint _lastSequenceNumber;
+
+        #endregion
 
         public Device(Session session, uint deviceId, uint playerCount, DeviceType deviceType, DeviceAdapter deviceAdapter)
         {
@@ -41,6 +54,11 @@ namespace PleaseResync
             State = DeviceState.Verifying;
             RemoteFrame = 0;
             RemoteFrameAdvantage = 0;
+        }
+
+        public override string ToString()
+        {
+            return $"Device {new { Id, PlayerCount }}";
         }
 
         #region Polling
@@ -67,11 +85,11 @@ namespace PleaseResync
                         // TODO: Tear down connection
                         break;
                 }
-            }
 
-            foreach (var (device, message) in Adapter.Receive())
-            {
-                _session.HandleMessage(device, message);
+                foreach (var (device, message) in Adapter.Receive())
+                {
+                    _session.HandleMessage(device, message);
+                }
             }
         }
 

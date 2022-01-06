@@ -24,8 +24,14 @@ namespace PleaseResync
         public const uint LIMIT_DEVICE_COUNT = 4;
         public const uint LIMIT_TOTAL_PLAYER_COUNT = 16;
 
+        /// <summary>
+        /// LocalDevice represents the device that is local to this Session.
+        /// </summary>
         public abstract Device LocalDevice { get; }
-        public abstract Device[] AllDevices { get; }
+        /// <summary>
+        /// EveryDevices is an array of every devices (local and remotes) taking part in this Session, indexed by their device ID.
+        /// </summary>
+        public abstract Device[] EveryDevices { get; }
 
         /// <summary>
         /// InputSize is the size in bits of the input for one player.
@@ -65,7 +71,7 @@ namespace PleaseResync
         /// <param name="playerCount">Number of players playing on this device. this number must be exactly the same in every Sessions for that particular device</param>
         /// <param name="frameDelay">Number of frames to skip before registering local input, used to avoid rollbacking every frame.</param>
         /// <param name="deviceAdapter">As the given device is local to the Session, we must provide a way to listen to other devices</param>
-        public abstract void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay, DeviceAdapter deviceAdapter);
+        public abstract void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay);
         /// <summary>
         /// AddRemoteDevice tells that the given device is remote to this Session and hosts the given player count.
         /// You must call SetLocalDevice before calling AddRemoteDevice
@@ -85,8 +91,9 @@ namespace PleaseResync
         public abstract bool IsRunning();
         /// <summary>
         /// HandleMessage is called when a message is received from a device.
+        /// It is only meant to be called from the adapters.
         /// </summary>
-        public abstract void HandleMessage(Device from, DeviceMessage message);
+        internal abstract void HandleMessage(Device from, DeviceMessage message);
 
         /// <summary>
         /// SetFrameInputs sets this local device inputs for the current frame + frameDelay.
