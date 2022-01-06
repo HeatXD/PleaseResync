@@ -8,6 +8,6 @@ namespace PleaseResync
     public interface DeviceAdapter
     {
         void Send(DeviceMessage message);
-        List<(Device, DeviceMessage)> Receive();
+        List<DeviceMessage> Receive();
     }
 }

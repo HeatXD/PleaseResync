@@ -25,16 +25,16 @@ namespace PleaseResyncTest
             uint device3 = 2;
 
             session1.SetLocalDevice(device1, 1, 0);
-            session1.AddRemoteDevice(device2, 1, new UdpDeviceAdapter(session1, device2, LOCAL_PORT_1, LOCAL_ADDRESS, LOCAL_PORT_2));
-            session1.AddRemoteDevice(device3, 1, new UdpDeviceAdapter(session1, device3, LOCAL_PORT_1, LOCAL_ADDRESS, LOCAL_PORT_3));
+            session1.AddRemoteDevice(device2, 1, new UdpDeviceAdapter(LOCAL_PORT_1, LOCAL_ADDRESS, LOCAL_PORT_2));
+            session1.AddRemoteDevice(device3, 1, new UdpDeviceAdapter(LOCAL_PORT_1, LOCAL_ADDRESS, LOCAL_PORT_3));
 
             session2.SetLocalDevice(device2, 1, 0);
-            session2.AddRemoteDevice(device1, 1, new UdpDeviceAdapter(session2, device1, LOCAL_PORT_2, LOCAL_ADDRESS, LOCAL_PORT_1));
-            session2.AddRemoteDevice(device3, 1, new UdpDeviceAdapter(session2, device3, LOCAL_PORT_2, LOCAL_ADDRESS, LOCAL_PORT_3));
+            session2.AddRemoteDevice(device1, 1, new UdpDeviceAdapter(LOCAL_PORT_2, LOCAL_ADDRESS, LOCAL_PORT_1));
+            session2.AddRemoteDevice(device3, 1, new UdpDeviceAdapter(LOCAL_PORT_2, LOCAL_ADDRESS, LOCAL_PORT_3));
 
             session3.SetLocalDevice(device3, 1, 0);
-            session3.AddRemoteDevice(device1, 1, new UdpDeviceAdapter(session3, device1, LOCAL_PORT_3, LOCAL_ADDRESS, LOCAL_PORT_1));
-            session3.AddRemoteDevice(device2, 1, new UdpDeviceAdapter(session3, device2, LOCAL_PORT_3, LOCAL_ADDRESS, LOCAL_PORT_2));
+            session3.AddRemoteDevice(device1, 1, new UdpDeviceAdapter(LOCAL_PORT_3, LOCAL_ADDRESS, LOCAL_PORT_1));
+            session3.AddRemoteDevice(device2, 1, new UdpDeviceAdapter(LOCAL_PORT_3, LOCAL_ADDRESS, LOCAL_PORT_2));
 
             // Should roughly take ~5 iterations to get all sessions verified.
             for (int i = 0; i < 10; i++)

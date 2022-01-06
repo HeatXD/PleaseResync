@@ -86,9 +86,9 @@ namespace PleaseResync
                         break;
                 }
 
-                foreach (var (device, message) in Adapter.Receive())
+                foreach (var message in Adapter.Receive())
                 {
-                    _session.HandleMessage(device, message);
+                    HandleMessage(message);
                 }
             }
         }
@@ -115,7 +115,11 @@ namespace PleaseResync
 
         private void HandleMessage(DeviceMessage message)
         {
-
+            switch (message)
+            {
+                case DeviceVerifyMessage verifyMessage:
+                    break;
+            }
         }
 
         #endregion

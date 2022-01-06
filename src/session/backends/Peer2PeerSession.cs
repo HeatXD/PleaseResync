@@ -46,10 +46,6 @@ namespace PleaseResync
         {
             return false; // TODO: check id all remote devices are verified
         }
-        internal override void HandleMessage(Device from, DeviceMessage message)
-        {
-
-        }
 
         public override void SetFrameInputs(byte[] input)
         {

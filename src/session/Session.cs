@@ -89,11 +89,6 @@ namespace PleaseResync
         /// IsRunning returns true when all the Sessions are synchronized and ready to accept inputs.
         /// </summary>
         public abstract bool IsRunning();
-        /// <summary>
-        /// HandleMessage is called when a message is received from a device.
-        /// It is only meant to be called from the adapters.
-        /// </summary>
-        internal abstract void HandleMessage(Device from, DeviceMessage message);
 
         /// <summary>
         /// SetFrameInputs sets this local device inputs for the current frame + frameDelay.
