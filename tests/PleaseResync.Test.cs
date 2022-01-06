@@ -45,6 +45,10 @@ namespace PleaseResyncTest
                     session.Poll();
                 }
             }
+
+            Assert.IsTrue(session1.IsRunning());
+            Assert.IsTrue(session2.IsRunning());
+            Assert.IsTrue(session3.IsRunning());
         }
     }
 }

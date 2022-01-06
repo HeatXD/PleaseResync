@@ -44,7 +44,7 @@ namespace PleaseResync
         }
         public override bool IsRunning()
         {
-            return true;
+            return false; // TODO: check id all remote devices are verified
         }
         public override void HandleMessage(Device from, DeviceMessage message)
         {

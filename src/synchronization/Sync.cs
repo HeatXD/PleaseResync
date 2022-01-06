@@ -12,13 +12,12 @@ namespace PleaseResync
             _devices = devices;
             _timeSync = new TimeSync();
             _deviceInputs = new InputQueue[_devices.Length];
-            
+
             for (int i = 0; i < _deviceInputs.Length; i++)
             {
                 _deviceInputs[i] = new InputQueue(inputSize, _devices[i].PlayerCount);
             }
         }
-
         // should be called after polling the remote devices
         public List<SessionAction> AdvanceSync()
         {

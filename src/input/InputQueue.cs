@@ -48,7 +48,7 @@ namespace PleaseResync
                 // predict current frame based off previous frame.
                 var prevFrame = _inputs[PreviousFrame(frameOffset)];
                 _inputs[frameOffset] = new GameInput(prevFrame);
-                _inputs[frameOffset].Frame = frame;
+                _inputs[frameOffset].Frame = GameInput.NullFrame;
                 // add predicted frame to the queue. when later is proved that the input was right it will be removed.
                 _lastPredictedInputs.Enqueue(new GameInput(_inputs[frameOffset]));
             }
