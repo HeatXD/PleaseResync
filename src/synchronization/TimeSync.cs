@@ -19,28 +19,27 @@ namespace PleaseResync
         }
         public bool IsTimeSynced(Device[] devices)
         {
-            int minRemoteFrame = InitialFrame - 1;
-            int maxRemoteFrameAdvantage = 0;
-
             foreach (var device in devices)
             {
                 if (device.Type == Device.DeviceType.Remote)
                 {
-                    if (device.RemoteFrame < minRemoteFrame || device.RemoteFrame == InitialFrame - 1)
+                    // find min remote frame
+                    if (device.RemoteFrame < RemoteFrame || device.RemoteFrame == InitialFrame - 1)
                     {
-                        minRemoteFrame = device.RemoteFrame;
+                        RemoteFrame = device.RemoteFrame;
                     }
-
-                    if (device.RemoteFrameAdvantage > maxRemoteFrameAdvantage)
+                    // find max frame advantage
+                    if (device.RemoteFrameAdvantage > RemoteFrameAdvantage)
                     {
-                        maxRemoteFrameAdvantage = device.RemoteFrameAdvantage;
+                        RemoteFrameAdvantage = device.RemoteFrameAdvantage;
                     }
                 }
             }
             // How far the client is ahead of the last reported frame by the remote clients           
-            int localFrameAdvantage = LocalFrame - minRemoteFrame;
+            int localFrameAdvantage = LocalFrame - RemoteFrame;
             // How different is the frame advantage reported by the remote clients and this one
-            int frameAdvantageDiff = localFrameAdvantage - maxRemoteFrameAdvantage;
+            int frameAdvantageDiff = localFrameAdvantage - RemoteFrameAdvantage;
+            // Only allow the local client to get so far ahead of remote.
             return localFrameAdvantage < MaxRollbackFrames && frameAdvantageDiff <= FrameAdvantageLimit;
         }
         public bool ShouldRollback()
