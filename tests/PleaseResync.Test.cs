@@ -11,7 +11,7 @@ namespace PleaseResyncTest
         private const ushort LOCAL_PORT_1 = 7001;
         private const ushort LOCAL_PORT_2 = 7002;
         private const ushort LOCAL_PORT_3 = 7003;
-        private static readonly IPAddress LOCAL_ADDRESS = IPAddress.Parse("127.0.0.1");
+        private static readonly string LOCAL_ADDRESS = "127.0.0.1";
 
         [TestMethod]
         public void Test_SyncDevices()
@@ -26,16 +26,16 @@ namespace PleaseResyncTest
             uint device3 = 2;
 
             session1.SetLocalDevice(device1, 1, 0);
-            session1.AddRemoteDevice(device2, 1, new IPEndPoint(LOCAL_ADDRESS, LOCAL_PORT_2));
-            session1.AddRemoteDevice(device3, 1, new IPEndPoint(LOCAL_ADDRESS, LOCAL_PORT_3));
+            session1.AddRemoteDevice(device2, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_2));
+            session1.AddRemoteDevice(device3, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_3));
 
             session2.SetLocalDevice(device2, 1, 0);
-            session2.AddRemoteDevice(device1, 1, new IPEndPoint(LOCAL_ADDRESS, LOCAL_PORT_1));
-            session2.AddRemoteDevice(device3, 1, new IPEndPoint(LOCAL_ADDRESS, LOCAL_PORT_3));
+            session2.AddRemoteDevice(device1, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_1));
+            session2.AddRemoteDevice(device3, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_3));
 
             session3.SetLocalDevice(device3, 1, 0);
-            session3.AddRemoteDevice(device1, 1, new IPEndPoint(LOCAL_ADDRESS, LOCAL_PORT_1));
-            session3.AddRemoteDevice(device2, 1, new IPEndPoint(LOCAL_ADDRESS, LOCAL_PORT_2));
+            session3.AddRemoteDevice(device1, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_1));
+            session3.AddRemoteDevice(device2, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_2));
 
             // Should roughly take ~500ms to get all sessions verified.
             for (int i = 0; i < 60; i++)

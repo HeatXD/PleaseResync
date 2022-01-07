@@ -75,5 +75,24 @@ namespace PleaseResync
             }
             throw new Exception($"Device ID not found for endpoint {endpoint}");
         }
+
+        #region Remote Configuration
+
+        public static IPEndPoint CreateRemoteConfiguration(IPEndPoint endpoint)
+        {
+            return endpoint;
+        }
+
+        public static IPEndPoint CreateRemoteConfiguration(string remoteAddress, ushort remotePort)
+        {
+            return new IPEndPoint(IPAddress.Parse(remoteAddress), remotePort);
+        }
+
+        public static IPEndPoint CreateRemoteConfiguration(IPAddress remoteAddress, ushort remotePort)
+        {
+            return new IPEndPoint(remoteAddress, remotePort);
+        }
+
+        #endregion
     }
 }
