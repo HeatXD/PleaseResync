@@ -9,7 +9,7 @@ namespace PleaseResync
         private Queue<GameInput> _lastPredictedInputs;
         private GameInput[] _inputs;
         private int _frameDelay;
-        public InputQueue(int inputSize, uint playerCount)
+        public InputQueue(uint inputSize, uint playerCount)
         {
             _lastPredictedInputs = new Queue<GameInput>();
             _inputs = new GameInput[QueueSize];
