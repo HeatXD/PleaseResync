@@ -10,9 +10,9 @@ namespace PleaseResync
         private Device[] _devices;
         private InputQueue[] _deviceInputs;
         private StateStorage _stateStorage;
-        private readonly int _inputSize;
+        private readonly uint _inputSize;
 
-        public Sync(Device[] devices, int inputSize)
+        public Sync(Device[] devices, uint inputSize)
         {
             _devices = devices;
             _inputSize = inputSize;

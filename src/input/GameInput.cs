@@ -9,8 +9,8 @@ namespace PleaseResync
         public const int NullFrame = -1;
         public int Frame;
         public byte[] Inputs;
-        public int InputSize;
-        public GameInput(int frame, int inputSize, uint playerCount)
+        public uint InputSize;
+        public GameInput(int frame, uint inputSize, uint playerCount)
         {
             Frame = frame;
             InputSize = inputSize;
