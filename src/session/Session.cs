@@ -23,7 +23,6 @@ namespace PleaseResync
         public const uint LIMIT_INPUT_SIZE = 32;
         public const uint LIMIT_DEVICE_COUNT = 4;
         public const uint LIMIT_TOTAL_PLAYER_COUNT = 16;
-
         /// <summary>
         /// LocalDevice represents the device that is local to this Session.
         /// </summary>
@@ -32,7 +31,6 @@ namespace PleaseResync
         /// EveryDevices is an array of every devices (local and remotes) taking part in this Session, indexed by their device ID.
         /// </summary>
         public abstract Device[] EveryDevices { get; }
-
         /// <summary>
         /// InputSize is the size in bits of the input for one player.
         /// </summary>
@@ -45,7 +43,6 @@ namespace PleaseResync
         /// TotalPlayerCount is the total number of players accross all devices taking part in this session.
         /// </summary>
         protected readonly uint TotalPlayerCount;
-
         /// <param name="inputSize">The size in bits of the input for one player.</param>
         /// <param name="deviceCount">The number of devices taking part in this session.</param>
         /// <param name="totalPlayerCount">The total number of players accross all devices taking part in this session.</param>
@@ -62,7 +59,6 @@ namespace PleaseResync
             DeviceCount = deviceCount;
             TotalPlayerCount = totalPlayerCount;
         }
-
         /// <summary>
         /// SetLocalDevice tells that the given device is local to this Session and hosts the given player count.
         /// You must call SetLocalDevice before calling AddRemoteDevice
@@ -80,7 +76,6 @@ namespace PleaseResync
         /// <param name="playerCount">Number of players playing on this device. this number must be exactly the same in every Sessions for that particular device</param>
         /// <param name="deviceAdapter">As the given device is not local to the Session, we must provide a way to communicate with that given device</param>
         public abstract void AddRemoteDevice(uint deviceId, uint playerCount, DeviceAdapter deviceAdapter);
-
         /// <summary>
         /// Poll must be called periodically to give the Session a chance to perform some work and synchronize devices.
         /// </summary>

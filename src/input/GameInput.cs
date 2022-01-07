@@ -24,7 +24,7 @@ namespace PleaseResync
             InputSize = gameInput.InputSize;
             Array.Copy(gameInput.Inputs, Inputs, gameInput.Inputs.Length);
         }
-        public void SetInputs(int offset, int playerCount, byte[] deviceInputs)
+        public void SetInputs(uint offset, uint playerCount, byte[] deviceInputs)
         {
             Debug.Assert(deviceInputs != null);
             Debug.Assert(offset + (playerCount * InputSize) < Inputs.Length);
