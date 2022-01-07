@@ -106,5 +106,7 @@ namespace PleaseResync
         /// </summary>
         /// <returns>a list of actions to perform in order before calling AdvanceFrame again</returns>
         public abstract List<SessionAction> AdvanceFrame();
+
+        internal virtual void SendMessageTo(uint deviceId, DeviceMessage message) { }
     }
 }

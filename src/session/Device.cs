@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace PleaseResync
 {
     public class Device
@@ -13,8 +15,8 @@ namespace PleaseResync
 
         public enum DeviceState
         {
-            Verifying,
-            Verified,
+            Syncing,
+            Running,
             Disconnected,
         }
 
@@ -36,6 +38,18 @@ namespace PleaseResync
 
         private readonly Session _session;
 
+        private uint _lastSendTime;
+        private uint _syncRoundtripsRemaining;
+        private ushort _syncRoundtripsRandomRequest;
+
+        #endregion
+
+        #region Constants
+
+        private const uint NUM_SYNC_ROUNDTRIPS = 5;
+        private const uint SYNC_NEXT_RETRY_INTERVAL = 2000;
+        private const uint SYNC_FIRST_RETRY_INTERVAL = 500;
+
         #endregion
 
         public Device(Session session, uint deviceId, uint playerCount, DeviceType deviceType)
@@ -46,7 +60,7 @@ namespace PleaseResync
             Type = deviceType;
             PlayerCount = playerCount;
 
-            State = DeviceState.Verifying;
+            State = deviceType == DeviceType.Local ? DeviceState.Running : DeviceState.Syncing;
             RemoteFrame = 0;
             RemoteFrameAdvantage = 0;
         }
@@ -56,11 +70,44 @@ namespace PleaseResync
             return $"Device {new { Id, PlayerCount }}";
         }
 
+        #region Poll
+
+        public void Poll()
+        {
+            uint now = Platform.GetCurrentTimeMS();
+
+            if (Type == Device.DeviceType.Remote)
+            {
+                switch (State)
+                {
+                    case DeviceState.Syncing:
+                        {
+                            uint interval = _syncRoundtripsRemaining == NUM_SYNC_ROUNDTRIPS ? SYNC_FIRST_RETRY_INTERVAL : SYNC_NEXT_RETRY_INTERVAL;
+                            if (_lastSendTime + interval < now)
+                            {
+                                _syncRoundtripsRandomRequest = Platform.GetRandomUnsignedShort();
+                                SendMessage(new DeviceSyncMessage { DeviceId = Id, PlayerCount = PlayerCount, RandomRequest = _syncRoundtripsRandomRequest });
+                            }
+                            break;
+                        }
+                }
+            }
+        }
+
+        #endregion
+
         #region State Machine
 
-        private void Verify()
+        public void StartSyncing()
         {
-            SendMessage(new DeviceVerifyMessage { DeviceId = Id, PlayerCount = PlayerCount });
+            _syncRoundtripsRemaining = NUM_SYNC_ROUNDTRIPS;
+            _syncRoundtripsRandomRequest = Platform.GetRandomUnsignedShort();
+            SendMessage(new DeviceSyncMessage { DeviceId = Id, PlayerCount = PlayerCount, RandomRequest = _syncRoundtripsRandomRequest });
+        }
+
+        public void FinishedSyncing()
+        {
+            State = DeviceState.Running;
         }
 
         #endregion
@@ -69,10 +116,35 @@ namespace PleaseResync
 
         internal void SendMessage(DeviceMessage message)
         {
+            _session.SendMessageTo(Id, message);
+            _lastSendTime = Platform.GetCurrentTimeMS();
         }
 
         internal void HandleMessage(DeviceMessage message)
         {
+            switch (message)
+            {
+                case DeviceSyncMessage syncMessage:
+                    Debug.Assert(syncMessage.PlayerCount == _session.AllDevices[syncMessage.DeviceId].PlayerCount);
+                    SendMessage(new DeviceSyncConfirmMessage { DeviceId = Id, PlayerCount = PlayerCount, RandomResponse = syncMessage.RandomRequest });
+                    break;
+                case DeviceSyncConfirmMessage syncConfirmMessage:
+                    Debug.Assert(syncConfirmMessage.PlayerCount == _session.AllDevices[syncConfirmMessage.DeviceId].PlayerCount);
+                    if (syncConfirmMessage.RandomResponse == _syncRoundtripsRandomRequest)
+                    {
+                        _syncRoundtripsRemaining -= 1;
+                        if (_syncRoundtripsRemaining > 0)
+                        {
+                            _syncRoundtripsRandomRequest = Platform.GetRandomUnsignedShort();
+                            SendMessage(new DeviceSyncMessage { DeviceId = Id, PlayerCount = PlayerCount, RandomRequest = _syncRoundtripsRandomRequest });
+                        }
+                        else
+                        {
+                            FinishedSyncing();
+                        }
+                    }
+                    break;
+            }
         }
 
         #endregion

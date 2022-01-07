@@ -14,7 +14,7 @@ namespace PleaseResyncTest
         private static readonly IPAddress LOCAL_ADDRESS = IPAddress.Parse("127.0.0.1");
 
         [TestMethod]
-        public void Test_VerifyDevices()
+        public void Test_SyncDevices()
         {
             var session1 = new Peer2PeerSession(INPUT_SIZE, 3, 3, new UdpSessionAdapter(LOCAL_PORT_1));
             var session2 = new Peer2PeerSession(INPUT_SIZE, 3, 3, new UdpSessionAdapter(LOCAL_PORT_2));
@@ -37,13 +37,15 @@ namespace PleaseResyncTest
             session3.AddRemoteDevice(device1, 1, new IPEndPoint(LOCAL_ADDRESS, LOCAL_PORT_1));
             session3.AddRemoteDevice(device2, 1, new IPEndPoint(LOCAL_ADDRESS, LOCAL_PORT_2));
 
-            // Should roughly take ~5 iterations to get all sessions verified.
-            for (int i = 0; i < 10; i++)
+            // Should roughly take ~500ms to get all sessions verified.
+            for (int i = 0; i < 60; i++)
             {
                 foreach (var session in sessions)
                 {
                     session.Poll();
                 }
+
+                System.Threading.Thread.Sleep(100);
             }
 
             Assert.IsTrue(session1.IsRunning());

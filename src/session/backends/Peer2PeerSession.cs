@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
 
@@ -34,21 +35,27 @@ namespace PleaseResync
             Debug.Assert(LocalDevice != null, "SetLocalDevice must be called before any call to AddRemoteDevice.");
             Debug.Assert(_allDevices[deviceId] == null, $"Remote device {deviceId} was already set.");
 
-            _allDevices[deviceId] = new Device(this, deviceId, playerCount, Device.DeviceType.Remote);
             _sessionAdapter.AddRemote(deviceId, remoteConfiguration);
+            _allDevices[deviceId] = new Device(this, deviceId, playerCount, Device.DeviceType.Remote);
+            _allDevices[deviceId].StartSyncing();
         }
 
         public override void Poll()
         {
+            foreach (var device in _allDevices)
+            {
+                device.Poll();
+            }
+
             var messages = _sessionAdapter.ReceiveFrom();
             foreach (var (deviceId, message) in messages)
             {
-                AllDevices[deviceId].HandleMessage(message);
+                _allDevices[deviceId].HandleMessage(message);
             }
         }
         public override bool IsRunning()
         {
-            throw new System.NotImplementedException();
+            return _allDevices.All(device => device.State == Device.DeviceState.Running);
         }
 
         public override void SetFrameInputs(byte[] input)
@@ -62,6 +69,12 @@ namespace PleaseResync
         public override List<SessionAction> AdvanceFrame()
         {
             throw new System.NotImplementedException();
+        }
+
+        internal override void SendMessageTo(uint deviceId, DeviceMessage message)
+        {
+            // System.Console.WriteLine($"Sending message to remote device {deviceId}: {message}");
+            _sessionAdapter.SendTo(deviceId, message);
         }
     }
 }
