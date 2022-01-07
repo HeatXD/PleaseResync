@@ -27,8 +27,12 @@ namespace PleaseResync
         }
 
         // should be called after polling the remote devices for their messages.
-        public List<SessionAction> AdvanceSync()
+        public List<SessionAction> AdvanceSync(uint localDeviceId, byte[] deviceInput)
         {
+            Debug.Assert(deviceInput != null);
+
+            UpdateNetwork();
+
             UpdateSyncFrame();
 
             var actions = new List<SessionAction>();
@@ -47,8 +51,10 @@ namespace PleaseResync
             if (_timeSync.IsTimeSynced(_devices))
             {
                 _timeSync.LocalFrame++;
+
+                AddLocalInput(localDeviceId, deviceInput);
                 var inputs = GetFrameInput(_timeSync.LocalFrame).Inputs;
-                //TODO somehow send all remote devices the local input with its associated frame
+
                 actions.Add(new SessionAdvanceFrameAction(inputs));
                 actions.Add(new SessionSaveGameAction(_stateStorage, _timeSync.LocalFrame));
             }
@@ -79,13 +85,15 @@ namespace PleaseResync
             }
             _timeSync.SyncFrame = foundFrame;
         }
-        public void AddLocalInput(uint deviceId, byte[] deviceInput)
+
+        private void AddLocalInput(uint deviceId, byte[] deviceInput)
         {
             if (_devices[deviceId].Type == Device.DeviceType.Local)
             {
                 AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
             }
         }
+
         private void AddDeviceInput(int frame, uint deviceId, byte[] deviceInput)
         {
             Debug.Assert(deviceInput.Length == _devices[deviceId].PlayerCount * _inputSize,
