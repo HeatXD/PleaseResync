@@ -33,7 +33,7 @@ namespace PleaseResync
                 actions.Add(new SessionLoadGameAction());
                 for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
                 {
-                    var inputs = GetFrameInput(_timeSync.LocalFrame).Inputs;
+                    var inputs = GetFrameInput(i).Inputs;
                     actions.Add(new SessionAdvanceFrameAction(inputs));
                 }
                 actions.Add(new SessionSaveGameAction());
