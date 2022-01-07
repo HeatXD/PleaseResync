@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -24,7 +25,7 @@ namespace PleaseResync
                 _deviceInputs[i] = new InputQueue(_inputSize, _devices[i].PlayerCount);
             }
         }
-        // should be called after polling the remote devices
+        // should be called after polling the remote devices for their messages.
         public List<SessionAction> AdvanceSync()
         {
             UpdateSyncFrame();
@@ -53,7 +54,14 @@ namespace PleaseResync
 
             return actions;
         }
-        public void UpdateSyncFrame()
+
+        private void UpdateNetwork()
+        {
+            // update the remote frame variables and remoteFrameAdvantage variables of each device if they recieved an input packet.
+            throw new NotImplementedException();
+        }
+
+        private void UpdateSyncFrame()
         {
             int finalFrame = _timeSync.RemoteFrame;
             if (_timeSync.RemoteFrame > _timeSync.LocalFrame)
@@ -70,7 +78,7 @@ namespace PleaseResync
             }
             _timeSync.SyncFrame = foundFrame;
         }
-        public void AddDeviceInput(int frame, uint deviceId, byte[] deviceInput)
+        private void AddDeviceInput(int frame, uint deviceId, byte[] deviceInput)
         {
             Debug.Assert(deviceInput.Length == _devices[deviceId].PlayerCount * _inputSize,
              "the length of the given deviceInput isnt correct!");
@@ -80,7 +88,7 @@ namespace PleaseResync
 
             _deviceInputs[deviceId].AddInput(frame, input);
         }
-        public GameInput GetDeviceInput(int frame, uint deviceId)
+        private GameInput GetDeviceInput(int frame, uint deviceId)
         {
             return _deviceInputs[deviceId].GetInput(frame);
         }
