@@ -75,7 +75,7 @@ namespace PleaseResync
         /// </summary>
         /// <param name="deviceId">Unique number used to identify this local device. this number must be exactly the same in every Sessions for that particular device</param>
         /// <param name="playerCount">Number of players playing on this device. this number must be exactly the same in every Sessions for that particular device</param>
-        /// <param name="deviceAdapter">As the given device is not local to the Session, we must provide a way to communicate with that given device</param>
+        /// <param name="remoteConfiguration">As the given device is not local to the Session, we must provide a way to communicate with that given device, this configuration will be passed to the session adapter</param>
         public abstract void AddRemoteDevice(uint deviceId, uint playerCount, object remoteConfiguration);
 
         /// <summary>
