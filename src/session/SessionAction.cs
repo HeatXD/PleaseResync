@@ -19,8 +19,9 @@ namespace PleaseResync
     public class SessionLoadGameAction : SessionAction
     {
         public StateStorage Storage;
-        public SessionLoadGameAction(StateStorage storage)
+        public SessionLoadGameAction(StateStorage storage, uint frame)
         {
+            Frame = frame;
             Storage = storage;
         }
     }
@@ -30,8 +31,9 @@ namespace PleaseResync
     public class SessionSaveGameAction : SessionAction
     {
         public StateStorage Storage;
-        public SessionSaveGameAction(StateStorage storage)
+        public SessionSaveGameAction(StateStorage storage, uint frame)
         {
+            Frame = frame;
             Storage = storage;
         }
     }

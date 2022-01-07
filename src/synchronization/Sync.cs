@@ -30,25 +30,25 @@ namespace PleaseResync
             UpdateSyncFrame();
 
             var actions = new List<SessionAction>();
-
+            // rollback update
             if (_timeSync.ShouldRollback())
             {
-                actions.Add(new SessionLoadGameAction(_stateStorage));
+                actions.Add(new SessionLoadGameAction(_stateStorage, (uint)_timeSync.SyncFrame));
                 for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
                 {
                     var inputs = GetFrameInput(i).Inputs;
                     actions.Add(new SessionAdvanceFrameAction(inputs));
                 }
-                actions.Add(new SessionSaveGameAction(_stateStorage));
+                actions.Add(new SessionSaveGameAction(_stateStorage, (uint)_timeSync.LocalFrame));
             }
-
+            // normal update
             if (_timeSync.IsTimeSynced(_devices))
             {
                 _timeSync.LocalFrame++;
                 var inputs = GetFrameInput(_timeSync.LocalFrame).Inputs;
                 //TODO somehow send all remote devices the local input with its associated frame
                 actions.Add(new SessionAdvanceFrameAction(inputs));
-                actions.Add(new SessionSaveGameAction(_stateStorage));
+                actions.Add(new SessionSaveGameAction(_stateStorage, (uint)_timeSync.LocalFrame));
             }
 
             return actions;
