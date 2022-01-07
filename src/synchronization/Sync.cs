@@ -25,6 +25,7 @@ namespace PleaseResync
                 _deviceInputs[i] = new InputQueue(_inputSize, _devices[i].PlayerCount);
             }
         }
+
         // should be called after polling the remote devices for their messages.
         public List<SessionAction> AdvanceSync()
         {
@@ -34,13 +35,13 @@ namespace PleaseResync
             // rollback update
             if (_timeSync.ShouldRollback())
             {
-                actions.Add(new SessionLoadGameAction(_stateStorage, (uint)_timeSync.SyncFrame));
+                actions.Add(new SessionLoadGameAction(_stateStorage, _timeSync.SyncFrame));
                 for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
                 {
                     var inputs = GetFrameInput(i).Inputs;
                     actions.Add(new SessionAdvanceFrameAction(inputs));
                 }
-                actions.Add(new SessionSaveGameAction(_stateStorage, (uint)_timeSync.LocalFrame));
+                actions.Add(new SessionSaveGameAction(_stateStorage, _timeSync.LocalFrame));
             }
             // normal update
             if (_timeSync.IsTimeSynced(_devices))
@@ -49,7 +50,7 @@ namespace PleaseResync
                 var inputs = GetFrameInput(_timeSync.LocalFrame).Inputs;
                 //TODO somehow send all remote devices the local input with its associated frame
                 actions.Add(new SessionAdvanceFrameAction(inputs));
-                actions.Add(new SessionSaveGameAction(_stateStorage, (uint)_timeSync.LocalFrame));
+                actions.Add(new SessionSaveGameAction(_stateStorage, _timeSync.LocalFrame));
             }
 
             return actions;
@@ -78,6 +79,7 @@ namespace PleaseResync
             }
             _timeSync.SyncFrame = foundFrame;
         }
+
         private void AddDeviceInput(int frame, uint deviceId, byte[] deviceInput)
         {
             Debug.Assert(deviceInput.Length == _devices[deviceId].PlayerCount * _inputSize,
@@ -88,10 +90,12 @@ namespace PleaseResync
 
             _deviceInputs[deviceId].AddInput(frame, input);
         }
+
         private GameInput GetDeviceInput(int frame, uint deviceId)
         {
             return _deviceInputs[deviceId].GetInput(frame);
         }
+
         public GameInput GetFrameInput(int frame)
         {
             uint playerCount = 0;
@@ -113,6 +117,7 @@ namespace PleaseResync
             }
             return input;
         }
+
         public void SetFrameDelay(uint delay, uint deviceId)
         {
             // only allow setting frame delay of the local device

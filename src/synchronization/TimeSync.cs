@@ -17,6 +17,7 @@ namespace PleaseResync
             RemoteFrame = InitialFrame;
             RemoteFrameAdvantage = 0;
         }
+
         public bool IsTimeSynced(Device[] devices)
         {
             foreach (var device in devices)
@@ -42,6 +43,7 @@ namespace PleaseResync
             // Only allow the local client to get so far ahead of remote.
             return localFrameAdvantage < MaxRollbackFrames && frameAdvantageDiff <= FrameAdvantageLimit;
         }
+
         public bool ShouldRollback()
         {
             // No need to rollback if we don't have a frame after the previous sync frame to synchronize to.
