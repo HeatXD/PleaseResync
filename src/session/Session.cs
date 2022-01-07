@@ -29,9 +29,9 @@ namespace PleaseResync
         /// </summary>
         public abstract Device LocalDevice { get; }
         /// <summary>
-        /// EveryDevices is an array of every devices (local and remotes) taking part in this Session, indexed by their device ID.
+        /// AllDevices is an array of every devices (local and remotes) taking part in this Session, indexed by their device ID.
         /// </summary>
-        public abstract Device[] EveryDevices { get; }
+        public abstract Device[] AllDevices { get; }
         /// <summary>
         /// InputSize is the size in bits of the input for one player.
         /// </summary>
