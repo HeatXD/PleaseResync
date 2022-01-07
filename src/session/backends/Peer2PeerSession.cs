@@ -48,7 +48,7 @@ namespace PleaseResync
             }
 
             var messages = _sessionAdapter.ReceiveFrom();
-            foreach (var (deviceId, message) in messages)
+            foreach (var (_, deviceId, message) in messages)
             {
                 _allDevices[deviceId].HandleMessage(message);
             }

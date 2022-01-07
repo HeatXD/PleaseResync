@@ -34,20 +34,20 @@ namespace PleaseResync
         {
         }
 
-        public void SendTo(uint deviceId, DeviceMessage message)
+        public uint SendTo(uint deviceId, DeviceMessage message)
         {
             var packet = MessagePackSerializer.Serialize(message);
-            _udpClient.Send(packet, packet.Length, _remoteEndpoints[deviceId]);
+            return (uint)_udpClient.Send(packet, packet.Length, _remoteEndpoints[deviceId]);
         }
 
-        public List<(uint deviceId, DeviceMessage message)> ReceiveFrom()
+        public List<(uint size, uint deviceId, DeviceMessage message)> ReceiveFrom()
         {
-            var messages = new List<(uint deviceId, DeviceMessage message)>();
+            var messages = new List<(uint size, uint deviceId, DeviceMessage message)>();
             if (_udpClient.Available > 0)
             {
                 var packet = _udpClient.Receive(ref _remoteReceiveEndpoint);
                 var message = MessagePackSerializer.Deserialize<DeviceMessage>(packet);
-                messages.Add((FindDeviceIdFromEndpoint(_remoteReceiveEndpoint), message));
+                messages.Add(((uint)packet.Length, FindDeviceIdFromEndpoint(_remoteReceiveEndpoint), message));
             }
             return messages;
         }

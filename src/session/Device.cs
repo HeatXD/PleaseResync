@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace PleaseResync
 {
@@ -41,6 +42,7 @@ namespace PleaseResync
         private uint _lastSendTime;
         private uint _syncRoundtripsRemaining;
         private ushort _syncRoundtripsRandomRequest;
+        private Queue<DeviceMessageQueueEntry> _sendQueue;
 
         #endregion
 
@@ -55,6 +57,7 @@ namespace PleaseResync
         public Device(Session session, uint deviceId, uint playerCount, DeviceType deviceType)
         {
             _session = session;
+            _sendQueue = new Queue<DeviceMessageQueueEntry>();
 
             Id = deviceId;
             Type = deviceType;
@@ -116,8 +119,9 @@ namespace PleaseResync
 
         internal void SendMessage(DeviceMessage message)
         {
-            _session.SendMessageTo(Id, message);
             _lastSendTime = Platform.GetCurrentTimeMS();
+            _sendQueue.Enqueue(new DeviceMessageQueueEntry { Time = _lastSendTime, Message = message });
+            PumpSendQueue();
         }
 
         internal void HandleMessage(DeviceMessage message)
@@ -147,6 +151,20 @@ namespace PleaseResync
             }
         }
 
+        internal void PumpSendQueue()
+        {
+            while (_sendQueue.Count > 0)
+            {
+                _session.SendMessageTo(Id, _sendQueue.Dequeue().Message);
+            }
+        }
+
         #endregion
+    }
+
+    internal class DeviceMessageQueueEntry
+    {
+        public uint Time;
+        public DeviceMessage Message;
     }
 }
