@@ -55,6 +55,8 @@ namespace PleaseResync
                 AddLocalInput(localDeviceId, deviceInput);
                 var inputs = GetFrameInput(_timeSync.LocalFrame).Inputs;
 
+                // TODO SEND LOCAL INPUT TO REMOTE DEVICES
+
                 actions.Add(new SessionAdvanceFrameAction(inputs));
                 actions.Add(new SessionSaveGameAction(_stateStorage, _timeSync.LocalFrame));
             }
@@ -88,10 +90,10 @@ namespace PleaseResync
 
         private void AddLocalInput(uint deviceId, byte[] deviceInput)
         {
-            if (_devices[deviceId].Type == Device.DeviceType.Local)
-            {
-                AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
-            }
+            // only allow adding input to the local device
+            Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Local);
+
+            AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
         }
 
         private void AddDeviceInput(int frame, uint deviceId, byte[] deviceInput)
@@ -135,10 +137,9 @@ namespace PleaseResync
         public void SetFrameDelay(uint delay, uint deviceId)
         {
             // only allow setting frame delay of the local device
-            if (_devices[deviceId].Type == Device.DeviceType.Local)
-            {
-                _deviceInputs[deviceId].SetFrameDelay(delay);
-            }
+            Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Local);
+
+            _deviceInputs[deviceId].SetFrameDelay(delay);
         }
     }
 }
