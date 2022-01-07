@@ -79,7 +79,13 @@ namespace PleaseResync
             }
             _timeSync.SyncFrame = foundFrame;
         }
-
+        public void AddLocalInput(uint deviceId, byte[] deviceInput)
+        {
+            if (_devices[deviceId].Type == Device.DeviceType.Local)
+            {
+                AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
+            }
+        }
         private void AddDeviceInput(int frame, uint deviceId, byte[] deviceInput)
         {
             Debug.Assert(deviceInput.Length == _devices[deviceId].PlayerCount * _inputSize,
