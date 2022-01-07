@@ -24,12 +24,12 @@ namespace PleaseResync
                 if (device.Type == Device.DeviceType.Remote)
                 {
                     // find min remote frame
-                    if (device.RemoteFrame < RemoteFrame || device.RemoteFrame == InitialFrame - 1)
+                    if (device.RemoteFrame < RemoteFrame || RemoteFrame == InitialFrame)
                     {
                         RemoteFrame = device.RemoteFrame;
                     }
                     // find max frame advantage
-                    if (device.RemoteFrameAdvantage > RemoteFrameAdvantage)
+                    if (device.RemoteFrameAdvantage > RemoteFrameAdvantage || RemoteFrameAdvantage == InitialFrame)
                     {
                         RemoteFrameAdvantage = device.RemoteFrameAdvantage;
                     }
