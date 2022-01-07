@@ -46,6 +46,7 @@ namespace PleaseResync
             {
                 _timeSync.LocalFrame++;
                 var inputs = GetFrameInput(_timeSync.LocalFrame).Inputs;
+                //TODO somehow send all remote devices the local input with its associated frame
                 actions.Add(new SessionAdvanceFrameAction(inputs));
                 actions.Add(new SessionSaveGameAction(_stateStorage));
             }

@@ -6,6 +6,7 @@ namespace PleaseResync
     public class StateStorage
     {
         private byte[] _state;
+
         public StateStorage() { }
         public byte[] Load()
         {

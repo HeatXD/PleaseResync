@@ -44,6 +44,7 @@ namespace PleaseResync
         public SessionAdvanceFrameAction(byte[] inputs)
         {
             Debug.Assert(inputs != null);
+
             Inputs = new byte[inputs.Length];
             Array.Copy(inputs, Inputs, inputs.Length);
         }
