@@ -71,10 +71,10 @@ namespace PleaseResync
             throw new System.NotImplementedException();
         }
 
-        internal override void SendMessageTo(uint deviceId, DeviceMessage message)
+        internal override uint SendMessageTo(uint deviceId, DeviceMessage message)
         {
             // System.Console.WriteLine($"Sending message to remote device {deviceId}: {message}");
-            _sessionAdapter.SendTo(deviceId, message);
+            return _sessionAdapter.SendTo(deviceId, message);
         }
     }
 }
