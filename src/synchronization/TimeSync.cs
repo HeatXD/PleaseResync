@@ -17,7 +17,6 @@ namespace PleaseResync
             RemoteFrame = InitialFrame;
             RemoteFrameAdvantage = 0;
         }
-
         public bool IsTimeSynced(Device[] devices)
         {
             int minRemoteFrame = InitialFrame - 1;
@@ -44,7 +43,6 @@ namespace PleaseResync
             int frameAdvantageDiff = localFrameAdvantage - maxRemoteFrameAdvantage;
             return localFrameAdvantage < MaxRollbackFrames && frameAdvantageDiff <= FrameAdvantageLimit;
         }
-
         public bool ShouldRollback()
         {
             // No need to rollback if we don't have a frame after the previous sync frame to synchronize to.

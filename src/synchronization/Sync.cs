@@ -6,14 +6,17 @@ namespace PleaseResync
     public class Sync
     {
         private TimeSync _timeSync;
-        private readonly Device[] _devices;
+        private Device[] _devices;
         private InputQueue[] _deviceInputs;
+        private StateStorage _stateStorage;
         private readonly int _inputSize;
+
         public Sync(Device[] devices, int inputSize)
         {
             _devices = devices;
             _inputSize = inputSize;
             _timeSync = new TimeSync();
+            _stateStorage = new StateStorage();
             _deviceInputs = new InputQueue[_devices.Length];
 
             for (int i = 0; i < _deviceInputs.Length; i++)
@@ -30,13 +33,13 @@ namespace PleaseResync
 
             if (_timeSync.ShouldRollback())
             {
-                actions.Add(new SessionLoadGameAction());
+                actions.Add(new SessionLoadGameAction(_stateStorage));
                 for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
                 {
                     var inputs = GetFrameInput(i).Inputs;
                     actions.Add(new SessionAdvanceFrameAction(inputs));
                 }
-                actions.Add(new SessionSaveGameAction());
+                actions.Add(new SessionSaveGameAction(_stateStorage));
             }
 
             if (_timeSync.IsTimeSynced(_devices))
@@ -44,7 +47,7 @@ namespace PleaseResync
                 _timeSync.LocalFrame++;
                 var inputs = GetFrameInput(_timeSync.LocalFrame).Inputs;
                 actions.Add(new SessionAdvanceFrameAction(inputs));
-                actions.Add(new SessionSaveGameAction());
+                actions.Add(new SessionSaveGameAction(_stateStorage));
             }
 
             return actions;
@@ -68,7 +71,8 @@ namespace PleaseResync
         }
         public void AddDeviceInput(int frame, uint deviceId, byte[] deviceInput)
         {
-            Debug.Assert(deviceInput.Length == _devices[deviceId].PlayerCount * _inputSize);
+            Debug.Assert(deviceInput.Length == _devices[deviceId].PlayerCount * _inputSize,
+             "the length of the given deviceInput isnt correct!");
 
             var input = new GameInput(frame, _inputSize, _devices[deviceId].PlayerCount);
             input.SetInputs(0, _devices[deviceId].PlayerCount, deviceInput);

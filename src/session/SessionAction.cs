@@ -18,12 +18,22 @@ namespace PleaseResync
     /// </summary>
     public class SessionLoadGameAction : SessionAction
     {
+        public StateStorage Storage;
+        public SessionLoadGameAction(StateStorage storage)
+        {
+            Storage = storage;
+        }
     }
     /// <summary>
     /// SessionSaveGameAction is an action you must fulfill when the Session needs to save your game state if it ever needs to rollback to that frame later.
     /// </summary>
     public class SessionSaveGameAction : SessionAction
     {
+        public StateStorage Storage;
+        public SessionSaveGameAction(StateStorage storage)
+        {
+            Storage = storage;
+        }
     }
     /// <summary>
     /// SessionAdvanceFrameAction is an action you must fulfill when the session needs the game to advance forward: either to perform a normal update or to resimulate an older frame.
@@ -31,12 +41,11 @@ namespace PleaseResync
     public class SessionAdvanceFrameAction : SessionAction
     {
         public byte[] Inputs;
-
         public SessionAdvanceFrameAction(byte[] inputs)
         {
             Debug.Assert(inputs != null);
-
-            Array.Copy(inputs, Inputs, Inputs.Length);
+            Inputs = new byte[inputs.Length];
+            Array.Copy(inputs, Inputs, inputs.Length);
         }
     }
 }
