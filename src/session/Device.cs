@@ -2,7 +2,7 @@ namespace PleaseResync
 {
     public class Device
     {
-        #region Enums
+        #region Enum
 
         public enum DeviceType
         {
@@ -20,12 +20,11 @@ namespace PleaseResync
 
         #endregion
 
-        #region Publics
+        #region Public
 
         public readonly uint Id;
         public readonly uint PlayerCount;
         public readonly DeviceType Type;
-        public readonly DeviceAdapter Adapter;
 
         public int RemoteFrame;
         public int RemoteFrameAdvantage;
@@ -33,22 +32,18 @@ namespace PleaseResync
 
         #endregion
 
-        #region Privates
+        #region Private
 
         private readonly Session _session;
 
-        private uint _lastSendTime;
-        private uint _lastSequenceNumber;
-
         #endregion
 
-        public Device(Session session, uint deviceId, uint playerCount, DeviceType deviceType, DeviceAdapter deviceAdapter)
+        public Device(Session session, uint deviceId, uint playerCount, DeviceType deviceType)
         {
             _session = session;
 
             Id = deviceId;
             Type = deviceType;
-            Adapter = deviceAdapter;
             PlayerCount = playerCount;
 
             State = DeviceState.Verifying;
@@ -61,40 +56,6 @@ namespace PleaseResync
             return $"Device {new { Id, PlayerCount }}";
         }
 
-        #region Polling
-
-        public void Poll()
-        {
-            uint now = Platform.GetCurrentTimeMS();
-            uint nextInterval = 1000;
-
-            if (Type == Device.DeviceType.Remote)
-            {
-                switch (State)
-                {
-                    case DeviceState.Verifying:
-                        if (_lastSendTime + nextInterval < now)
-                        {
-                            Verify();
-                        }
-                        break;
-                    case DeviceState.Verified:
-                        // TODO: We are up and running
-                        break;
-                    case DeviceState.Disconnected:
-                        // TODO: Tear down connection
-                        break;
-                }
-
-                foreach (var message in Adapter.Receive())
-                {
-                    HandleMessage(message);
-                }
-            }
-        }
-
-        #endregion
-
         #region State Machine
 
         private void Verify()
@@ -106,20 +67,12 @@ namespace PleaseResync
 
         #region Sending and Receiving messages
 
-        private void SendMessage(DeviceMessage message)
+        internal void SendMessage(DeviceMessage message)
         {
-            _lastSendTime = Platform.GetCurrentTimeMS();
-            message.SequenceNumber = _lastSequenceNumber++;
-            Adapter.Send(message);
         }
 
-        private void HandleMessage(DeviceMessage message)
+        internal void HandleMessage(DeviceMessage message)
         {
-            switch (message)
-            {
-                case DeviceVerifyMessage verifyMessage:
-                    break;
-            }
         }
 
         #endregion

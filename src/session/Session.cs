@@ -23,6 +23,7 @@ namespace PleaseResync
         public const uint LIMIT_INPUT_SIZE = 32;
         public const uint LIMIT_DEVICE_COUNT = 4;
         public const uint LIMIT_TOTAL_PLAYER_COUNT = 16;
+
         /// <summary>
         /// LocalDevice represents the device that is local to this Session.
         /// </summary>
@@ -75,7 +76,8 @@ namespace PleaseResync
         /// <param name="deviceId">Unique number used to identify this local device. this number must be exactly the same in every Sessions for that particular device</param>
         /// <param name="playerCount">Number of players playing on this device. this number must be exactly the same in every Sessions for that particular device</param>
         /// <param name="deviceAdapter">As the given device is not local to the Session, we must provide a way to communicate with that given device</param>
-        public abstract void AddRemoteDevice(uint deviceId, uint playerCount, DeviceAdapter deviceAdapter);
+        public abstract void AddRemoteDevice(uint deviceId, uint playerCount, object remoteConfiguration);
+
         /// <summary>
         /// Poll must be called periodically to give the Session a chance to perform some work and synchronize devices.
         /// </summary>
