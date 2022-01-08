@@ -1,16 +1,16 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace PleaseResync
 {
     public class Sync
     {
+        private readonly uint _inputSize;
+        private readonly Device[] _devices;
+
         private TimeSync _timeSync;
-        private Device[] _devices;
         private InputQueue[] _deviceInputs;
         private StateStorage _stateStorage;
-        private readonly uint _inputSize;
 
         public Sync(Device[] devices, uint inputSize)
         {
@@ -19,11 +19,17 @@ namespace PleaseResync
             _timeSync = new TimeSync();
             _stateStorage = new StateStorage();
             _deviceInputs = new InputQueue[_devices.Length];
+        }
 
-            for (int i = 0; i < _deviceInputs.Length; i++)
-            {
-                _deviceInputs[i] = new InputQueue(_inputSize, _devices[i].PlayerCount);
-            }
+        public void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)
+        {
+            _deviceInputs[deviceId] = new InputQueue(_inputSize, playerCount);
+            _deviceInputs[deviceId].SetFrameDelay(frameDelay);
+        }
+
+        public void AddRemoteDevice(uint deviceId, uint playerCount)
+        {
+            _deviceInputs[deviceId] = new InputQueue(_inputSize, playerCount);
         }
 
         // should be called after polling the remote devices for their messages.
@@ -87,7 +93,15 @@ namespace PleaseResync
             _timeSync.SyncFrame = foundFrame;
         }
 
-        internal void AddRemoteInput(uint deviceId, int frame, byte[] deviceInput)
+        private void AddLocalInput(uint deviceId, byte[] deviceInput)
+        {
+            // only allow adding input to the local device
+            Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Local);
+
+            AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
+        }
+
+        public void AddRemoteInput(uint deviceId, int frame, byte[] deviceInput)
         {
             // only allow adding input to the local device
             Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Remote);
@@ -99,14 +113,6 @@ namespace PleaseResync
             }
 
             AddDeviceInput(frame, deviceId, deviceInput);
-        }
-
-        private void AddLocalInput(uint deviceId, byte[] deviceInput)
-        {
-            // only allow adding input to the local device
-            Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Local);
-
-            AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
         }
 
         private void AddDeviceInput(int frame, uint deviceId, byte[] deviceInput)
@@ -145,14 +151,6 @@ namespace PleaseResync
                 playerOffset += _devices[i].PlayerCount;
             }
             return input;
-        }
-
-        public void SetFrameDelay(uint delay, uint deviceId)
-        {
-            // only allow setting frame delay of the local device
-            Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Local);
-
-            _deviceInputs[deviceId].SetFrameDelay(delay);
         }
     }
 }

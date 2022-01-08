@@ -7,16 +7,16 @@ namespace PleaseResync
     {
         private byte[] _state;
 
-        public StateStorage() { }
         public byte[] Load()
         {
             Debug.Assert(_state != null, "trying to load an empty state!");
 
-            byte[] tmpState = new byte[_state.Length];
+            var tmpState = new byte[_state.Length];
             Array.Copy(_state, tmpState, _state.Length);
 
             return tmpState;
         }
+
         public void Save(byte[] gameState)
         {
             Debug.Assert(gameState != null, "trying to save an empty gamestate!");

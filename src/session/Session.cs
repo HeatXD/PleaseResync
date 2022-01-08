@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Collections.Generic;
-using System;
 
 namespace PleaseResync
 {
@@ -45,6 +44,7 @@ namespace PleaseResync
         /// TotalPlayerCount is the total number of players accross all devices taking part in this session.
         /// </summary>
         protected readonly uint TotalPlayerCount;
+
         /// <param name="inputSize">The size in bits of the input for one player.</param>
         /// <param name="deviceCount">The number of devices taking part in this session.</param>
         /// <param name="totalPlayerCount">The total number of players accross all devices taking part in this session.</param>
@@ -68,7 +68,6 @@ namespace PleaseResync
         /// <param name="deviceId">Unique number used to identify this local device. this number must be exactly the same in every Sessions for that particular device</param>
         /// <param name="playerCount">Number of players playing on this device. this number must be exactly the same in every Sessions for that particular device</param>
         /// <param name="frameDelay">Number of frames to skip before registering local input, used to avoid rollbacking every frame.</param>
-        /// <param name="deviceAdapter">As the given device is local to the Session, we must provide a way to listen to other devices</param>
         public abstract void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay);
         /// <summary>
         /// AddRemoteDevice tells that the given device is remote to this Session and hosts the given player count.
@@ -78,6 +77,7 @@ namespace PleaseResync
         /// <param name="playerCount">Number of players playing on this device. this number must be exactly the same in every Sessions for that particular device</param>
         /// <param name="remoteConfiguration">As the given device is not local to the Session, we must provide a way to communicate with that given device, this configuration will be passed to the session adapter</param>
         public abstract void AddRemoteDevice(uint deviceId, uint playerCount, object remoteConfiguration);
+
         /// <summary>
         /// Poll must be called periodically to give the Session a chance to perform some work and synchronize devices.
         /// </summary>
@@ -87,12 +87,12 @@ namespace PleaseResync
         /// </summary>
         public abstract bool IsRunning();
         /// <summary>
-        /// AdvanceFrame will tell the session to increment the current frame by one and that you are ready to work on the next frame.
-        /// This must be called after you set your local inputs for this frame and simulated your game frame with the inputs provided by the session.
+        /// AdvanceFrame will tell the session to increment the current frame and that you are ready to work on the next frame.
         /// </summary>
+        /// <param name="localInput">the local device input for the current frame</param>
         /// <returns>a list of actions to perform in order before calling AdvanceFrame again</returns>
         public abstract List<SessionAction> AdvanceFrame(byte[] localInput);
-        public abstract void SetLocalFrameDelay(uint delay);
+
         internal abstract uint SendMessageTo(uint deviceId, DeviceMessage message);
         internal abstract void AddRemoteInput(uint deviceId, DeviceInputMessage message);
     }

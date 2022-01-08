@@ -13,6 +13,7 @@ namespace PleaseResync
         /// </summary>
         public uint Frame;
     }
+
     /// <summary>
     /// SessionLoadGameAction is an action you must fulfill when the Session needs your game to rollback to a previous frame.
     /// </summary>
@@ -25,6 +26,7 @@ namespace PleaseResync
             Storage = storage;
         }
     }
+
     /// <summary>
     /// SessionSaveGameAction is an action you must fulfill when the Session needs to save your game state if it ever needs to rollback to that frame later.
     /// </summary>
@@ -37,6 +39,7 @@ namespace PleaseResync
             Storage = storage;
         }
     }
+
     /// <summary>
     /// SessionAdvanceFrameAction is an action you must fulfill when the session needs the game to advance forward: either to perform a normal update or to resimulate an older frame.
     /// </summary>

@@ -1,21 +1,25 @@
 using System;
-using System.Diagnostics;
 using System.Linq;
+using System.Diagnostics;
 
 namespace PleaseResync
 {
     public class GameInput
     {
         public const int NullFrame = -1;
+
+        public readonly uint InputSize;
+
         public int Frame;
         public byte[] Inputs;
-        public uint InputSize;
+
         public GameInput(int frame, uint inputSize, uint playerCount)
         {
             Frame = frame;
-            InputSize = inputSize;
             Inputs = new byte[inputSize * playerCount];
+            InputSize = inputSize;
         }
+
         public GameInput(GameInput gameInput)
         {
             Debug.Assert(gameInput.Inputs != null);
@@ -24,6 +28,7 @@ namespace PleaseResync
             InputSize = gameInput.InputSize;
             Array.Copy(gameInput.Inputs, Inputs, gameInput.Inputs.Length);
         }
+
         public void SetInputs(uint offset, uint playerCount, byte[] deviceInputs)
         {
             Debug.Assert(deviceInputs != null);
@@ -32,6 +37,7 @@ namespace PleaseResync
 
             Array.Copy(deviceInputs, 0, Inputs, offset, deviceInputs.Length);
         }
+
         public bool Equal(GameInput other, bool inputsOnly)
         {
             if (!inputsOnly && Frame != other.Frame)

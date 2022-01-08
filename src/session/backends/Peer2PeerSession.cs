@@ -9,10 +9,11 @@ namespace PleaseResync
     /// </summary>
     public class Peer2PeerSession : Session
     {
-        private Device _localDevice;
         private readonly Device[] _allDevices;
         private readonly SessionAdapter _sessionAdapter;
+
         private Sync _sync;
+        private Device _localDevice;
 
         public override Device LocalDevice => _localDevice;
         public override Device[] AllDevices => _allDevices;
@@ -20,8 +21,8 @@ namespace PleaseResync
         public Peer2PeerSession(uint inputSize, uint deviceCount, uint totalPlayerCount, SessionAdapter adapter) : base(inputSize, deviceCount, totalPlayerCount)
         {
             _allDevices = new Device[deviceCount];
-            _sync = new Sync(_allDevices, inputSize);
             _sessionAdapter = adapter;
+            _sync = new Sync(_allDevices, inputSize);
         }
 
         public override void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)
@@ -31,6 +32,7 @@ namespace PleaseResync
 
             _localDevice = new Device(this, deviceId, playerCount, Device.DeviceType.Local);
             _allDevices[deviceId] = LocalDevice;
+            _sync.SetLocalDevice(deviceId, playerCount, frameDelay);
         }
         public override void AddRemoteDevice(uint deviceId, uint playerCount, object remoteConfiguration)
         {
@@ -40,6 +42,7 @@ namespace PleaseResync
             _sessionAdapter.AddRemote(deviceId, remoteConfiguration);
             _allDevices[deviceId] = new Device(this, deviceId, playerCount, Device.DeviceType.Remote);
             _allDevices[deviceId].StartSyncing();
+            _sync.AddRemoteDevice(deviceId, playerCount);
         }
 
         public override void Poll()
@@ -58,7 +61,6 @@ namespace PleaseResync
                 _allDevices[deviceId].HandleMessage(message);
             }
         }
-
         public override bool IsRunning()
         {
             return _allDevices.All(device => device.State == Device.DeviceState.Running);
@@ -66,6 +68,7 @@ namespace PleaseResync
 
         public override List<SessionAction> AdvanceFrame(byte[] localInput)
         {
+            Debug.Assert(IsRunning(), "Session must be running before calling AdvanceFrame");
             Debug.Assert(localInput != null);
 
             return _sync.AdvanceSync(_localDevice.Id, localInput);
@@ -76,15 +79,9 @@ namespace PleaseResync
             // System.Console.WriteLine($"Sending message to remote device {deviceId}: {message}");
             return _sessionAdapter.SendTo(deviceId, message);
         }
-
         internal override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
         {
             _sync.AddRemoteInput(deviceId, (int)message.Frame, message.InputData);
-        }
-
-        public override void SetLocalFrameDelay(uint delay)
-        {
-            _sync.SetFrameDelay(delay, _localDevice.Id);
         }
     }
 }

@@ -6,20 +6,23 @@ namespace PleaseResync
     public class InputQueue
     {
         public const int QueueSize = 128;
-        private Queue<GameInput> _lastPredictedInputs;
-        private GameInput[] _inputs;
+
         private int _frameDelay;
+        private GameInput[] _inputs;
+        private Queue<GameInput> _lastPredictedInputs;
+
         public InputQueue(uint inputSize, uint playerCount)
         {
-            _lastPredictedInputs = new Queue<GameInput>();
             _inputs = new GameInput[QueueSize];
             _frameDelay = 0;
+            _lastPredictedInputs = new Queue<GameInput>();
 
             for (int i = 0; i < _inputs.Length; i++)
             {
                 _inputs[i] = new GameInput(GameInput.NullFrame, inputSize, playerCount);
             }
         }
+
         public void AddInput(int frame, GameInput input)
         {
             Debug.Assert(frame >= 0);
@@ -28,15 +31,15 @@ namespace PleaseResync
             _inputs[frame % QueueSize] = new GameInput(input);
             _inputs[frame % QueueSize].Frame = frame;
         }
+
         public void SetFrameDelay(uint frameDelay)
         {
             _frameDelay = (int)frameDelay;
         }
+
         public GameInput GetInput(int frame)
         {
             Debug.Assert(frame >= 0);
-
-            GameInput resultInput;
 
             int frameOffset = frame % QueueSize;
             // if the frame is a NullFrame or the frames dont match predict the next frame based off the previous frame.
@@ -51,9 +54,9 @@ namespace PleaseResync
                 _lastPredictedInputs.Enqueue(new GameInput(_inputs[frameOffset]));
             }
 
-            resultInput = new GameInput(_inputs[frameOffset]);
-            return resultInput;
+            return new GameInput(_inputs[frameOffset]);
         }
-        protected int PreviousFrame(int offset) => (((offset) == 0) ? (QueueSize - 1) : ((offset) - 1));
+
+        private int PreviousFrame(int offset) => (((offset) == 0) ? (QueueSize - 1) : ((offset) - 1));
     }
 }
