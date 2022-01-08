@@ -61,6 +61,7 @@ namespace PleaseResync
             var messages = _sessionAdapter.ReceiveFrom();
             foreach (var (_, deviceId, message) in messages)
             {
+                // System.Console.WriteLine($"Received message from remote device {deviceId}: {message}");
                 _allDevices[deviceId].HandleMessage(message);
             }
         }
