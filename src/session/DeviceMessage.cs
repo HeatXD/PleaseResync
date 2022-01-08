@@ -4,6 +4,7 @@ namespace PleaseResync
 {
     [Union(0, typeof(DeviceSyncMessage))]
     [Union(1, typeof(DeviceSyncConfirmMessage))]
+    [Union(2, typeof(DeviceInputMessage))]
     [MessagePackObject]
     public abstract class DeviceMessage
     {
@@ -35,5 +36,14 @@ namespace PleaseResync
         public uint RandomResponse;
 
         public override string ToString() { return $"{typeof(DeviceSyncConfirmMessage)}: {new { DeviceId, PlayerCount, RandomResponse }}"; }
+    }
+
+    [MessagePackObject]
+    public class DeviceInputMessage : DeviceMessage
+    {
+        [Key(1)]
+        public uint Frame;
+        [Key(2)]
+        public byte[] InputData;
     }
 }
