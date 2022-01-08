@@ -16,14 +16,14 @@ namespace PleaseResyncTest
         [TestMethod]
         public void Test_SyncDevices()
         {
+            uint device1 = 0;
+            uint device2 = 1;
+            uint device3 = 2;
+
             var session1 = new Peer2PeerSession(INPUT_SIZE, 3, 3, new UdpSessionAdapter(LOCAL_PORT_1));
             var session2 = new Peer2PeerSession(INPUT_SIZE, 3, 3, new UdpSessionAdapter(LOCAL_PORT_2));
             var session3 = new Peer2PeerSession(INPUT_SIZE, 3, 3, new UdpSessionAdapter(LOCAL_PORT_3));
             var sessions = new Session[] { session1, session2, session3 };
-
-            uint device1 = 0;
-            uint device2 = 1;
-            uint device3 = 2;
 
             session1.SetLocalDevice(device1, 1, 0);
             session1.AddRemoteDevice(device2, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_2));
@@ -51,6 +51,51 @@ namespace PleaseResyncTest
             Assert.IsTrue(session1.IsRunning());
             Assert.IsTrue(session2.IsRunning());
             Assert.IsTrue(session3.IsRunning());
+
+            for (int i = 0; i < 60; i++)
+            {
+                session1.AdvanceFrame(new byte[INPUT_SIZE]);
+
+                System.Threading.Thread.Sleep(100);
+            }
+        }
+
+        [TestMethod]
+        public void Test_SyncInputAcrossDevices()
+        {
+            uint device1 = 0;
+            uint device2 = 1;
+
+            var session1 = new Peer2PeerSession(INPUT_SIZE, 2, 2, new UdpSessionAdapter(LOCAL_PORT_1));
+            var session2 = new Peer2PeerSession(INPUT_SIZE, 2, 2, new UdpSessionAdapter(LOCAL_PORT_2));
+            var sessions = new Session[] { session1, session2 };
+
+            session1.SetLocalDevice(device1, 1, 0);
+            session1.AddRemoteDevice(device2, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_2));
+
+            session2.SetLocalDevice(device2, 1, 0);
+            session2.AddRemoteDevice(device1, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_1));
+
+            // Should roughly take ~500ms to get all sessions verified.
+            for (int i = 0; i < 60; i++)
+            {
+                foreach (var session in sessions)
+                {
+                    session.Poll();
+                }
+
+                System.Threading.Thread.Sleep(100);
+            }
+
+            Assert.IsTrue(session1.IsRunning());
+            Assert.IsTrue(session2.IsRunning());
+
+            for (int i = 0; i < 60; i++)
+            {
+                session1.AdvanceFrame(new byte[INPUT_SIZE]);
+
+                System.Threading.Thread.Sleep(100);
+            }
         }
     }
 }

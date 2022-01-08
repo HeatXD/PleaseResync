@@ -47,6 +47,8 @@ namespace PleaseResync
 
         public override void Poll()
         {
+            Debug.Assert(_allDevices.All(device => device != null), "All devices must be Set/Added before calling Poll");
+
             if (!IsRunning())
             {
                 foreach (var device in _allDevices)

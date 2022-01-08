@@ -9,6 +9,7 @@ namespace PleaseResync
         public const int NullFrame = -1;
 
         public readonly uint InputSize;
+        public readonly uint PlayerCount;
 
         public int Frame;
         public byte[] Inputs;
@@ -18,14 +19,11 @@ namespace PleaseResync
             Frame = frame;
             Inputs = new byte[inputSize * playerCount];
             InputSize = inputSize;
+            PlayerCount = playerCount;
         }
 
-        public GameInput(GameInput gameInput)
+        public GameInput(GameInput gameInput) : this(gameInput.Frame, gameInput.InputSize, gameInput.PlayerCount)
         {
-            Debug.Assert(gameInput.Inputs != null);
-
-            Frame = gameInput.Frame;
-            InputSize = gameInput.InputSize;
             Array.Copy(gameInput.Inputs, Inputs, gameInput.Inputs.Length);
         }
 
