@@ -66,11 +66,10 @@ namespace PleaseResync
                 {
                     if (device.Type == Device.DeviceType.Remote)
                     {
-                        device.SendMessage(new DeviceInputMessage { Frame = (uint)_timeSync.LocalFrame, Input = inputs });
+                        device.SendMessage(new DeviceInputMessage { Frame = (uint)_timeSync.LocalFrame, Input = deviceInput });
                     }
                 }
             }
-
             return actions;
         }
 
@@ -106,7 +105,7 @@ namespace PleaseResync
             // only allow adding input to the local device
             Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Remote);
             // update device variables if needed
-            if (_devices[deviceId].RemoteFrame < frame)
+            if (_devices[deviceId].RemoteFrame <= frame)
             {
                 _devices[deviceId].RemoteFrame = frame;
                 _devices[deviceId].RemoteFrameAdvantage = _timeSync.LocalFrame - frame;
