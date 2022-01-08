@@ -22,7 +22,10 @@ namespace PleaseResync
                 _inputs[i] = new GameInput(GameInput.NullFrame, inputSize, playerCount);
             }
         }
-
+        public Queue<GameInput> GetPredictedInputs()
+        {
+            return _lastPredictedInputs;
+        }
         public void AddInput(int frame, GameInput input)
         {
             Debug.Assert(frame >= 0);
@@ -51,9 +54,10 @@ namespace PleaseResync
                 _inputs[frameOffset] = new GameInput(prevFrame);
                 _inputs[frameOffset].Frame = GameInput.NullFrame;
                 // add predicted frame to the queue. when later is proved that the input was right it will be removed.
-                _lastPredictedInputs.Enqueue(new GameInput(_inputs[frameOffset]));
+                var predicted = new GameInput(_inputs[frameOffset]);
+                predicted.Frame = frame;
+                _lastPredictedInputs.Enqueue(new GameInput(predicted));
             }
-
             return new GameInput(_inputs[frameOffset]);
         }
 

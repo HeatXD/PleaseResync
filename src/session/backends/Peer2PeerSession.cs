@@ -34,6 +34,7 @@ namespace PleaseResync
             _allDevices[deviceId] = LocalDevice;
             _sync.SetLocalDevice(deviceId, playerCount, frameDelay);
         }
+
         public override void AddRemoteDevice(uint deviceId, uint playerCount, object remoteConfiguration)
         {
             Debug.Assert(LocalDevice != null, "SetLocalDevice must be called before any call to AddRemoteDevice.");
@@ -63,6 +64,7 @@ namespace PleaseResync
                 _allDevices[deviceId].HandleMessage(message);
             }
         }
+
         public override bool IsRunning()
         {
             return _allDevices.All(device => device.State == Device.DeviceState.Running);
@@ -81,6 +83,7 @@ namespace PleaseResync
             // System.Console.WriteLine($"Sending message to remote device {deviceId}: {message}");
             return _sessionAdapter.SendTo(deviceId, message);
         }
+
         internal override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
         {
             _sync.AddRemoteInput(deviceId, (int)message.Frame, message.Input);

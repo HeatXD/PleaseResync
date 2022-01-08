@@ -83,7 +83,6 @@ namespace PleaseResyncTest
                 {
                     session.Poll();
                 }
-
                 System.Threading.Thread.Sleep(100);
             }
 
@@ -92,15 +91,10 @@ namespace PleaseResyncTest
 
             for (int i = 0; i < 60; i++)
             {
-                var actions1 = session1.AdvanceFrame(new byte[INPUT_SIZE]);
-                System.Console.WriteLine(actions1.Aggregate("", (acc, a) => acc + a.ToString() + ", "));
-
-                var actions2 = session2.AdvanceFrame(new byte[INPUT_SIZE]);
-                System.Console.WriteLine(actions2.Aggregate("", (acc, a) => acc + a.ToString() + ", "));
-
+                var actions1 = session1.AdvanceFrame(new byte[] { 2, 4 });
+                var actions2 = session2.AdvanceFrame(new byte[] { 6, 7 });
                 System.Threading.Thread.Sleep(100);
             }
-            throw new System.SystemException();
         }
     }
 }
