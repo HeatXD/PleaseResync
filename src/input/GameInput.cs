@@ -33,7 +33,7 @@ namespace PleaseResync
             Debug.Assert(offset + (playerCount * InputSize) <= Inputs.Length);
             Debug.Assert(deviceInputs.Length == playerCount * InputSize);
 
-            Array.Copy(deviceInputs, 0, Inputs, offset, deviceInputs.Length);
+            Array.Copy(deviceInputs, 0, Inputs, offset * InputSize, deviceInputs.Length);
         }
 
         public bool Equal(GameInput other, bool inputsOnly)
