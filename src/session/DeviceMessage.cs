@@ -47,5 +47,7 @@ namespace PleaseResync
         public uint Frame;
         [Key(2)]
         public byte[] Input;
+
+        public override string ToString() { return $"{typeof(DeviceInputMessage)}: {new { Frame, Input }}"; }
     }
 }

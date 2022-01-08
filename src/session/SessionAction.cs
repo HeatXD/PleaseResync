@@ -20,11 +20,14 @@ namespace PleaseResync
     public class SessionLoadGameAction : SessionAction
     {
         public StateStorage Storage;
+
         public SessionLoadGameAction(StateStorage storage, int frame)
         {
             Frame = (uint)frame;
             Storage = storage;
         }
+
+        public override string ToString() { return $"{typeof(SessionLoadGameAction)}: {new { Frame, Storage }}"; }
     }
 
     /// <summary>
@@ -33,11 +36,14 @@ namespace PleaseResync
     public class SessionSaveGameAction : SessionAction
     {
         public StateStorage Storage;
+
         public SessionSaveGameAction(StateStorage storage, int frame)
         {
             Frame = (uint)frame;
             Storage = storage;
         }
+
+        public override string ToString() { return $"{typeof(SessionSaveGameAction)}: {new { Frame, Storage }}"; }
     }
 
     /// <summary>
@@ -46,6 +52,7 @@ namespace PleaseResync
     public class SessionAdvanceFrameAction : SessionAction
     {
         public byte[] Inputs;
+
         public SessionAdvanceFrameAction(byte[] inputs)
         {
             Debug.Assert(inputs != null);
@@ -53,5 +60,7 @@ namespace PleaseResync
             Inputs = new byte[inputs.Length];
             Array.Copy(inputs, Inputs, inputs.Length);
         }
+
+        public override string ToString() { return $"{typeof(SessionAdvanceFrameAction)}: {new { Frame, Inputs }}"; }
     }
 }

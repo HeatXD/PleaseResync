@@ -1,4 +1,4 @@
-using System.Net;
+using System.Linq;
 using PleaseResync;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -92,9 +92,11 @@ namespace PleaseResyncTest
 
             for (int i = 0; i < 60; i++)
             {
-                var res = session1.AdvanceFrame(new byte[INPUT_SIZE]);
+                var actions1 = session1.AdvanceFrame(new byte[INPUT_SIZE]);
+                System.Console.WriteLine(actions1.Aggregate("", (acc, a) => acc + a.ToString() + ", "));
 
-                System.Console.WriteLine(res);
+                var actions2 = session2.AdvanceFrame(new byte[INPUT_SIZE]);
+                System.Console.WriteLine(actions2.Aggregate("", (acc, a) => acc + a.ToString() + ", "));
 
                 System.Threading.Thread.Sleep(100);
             }
