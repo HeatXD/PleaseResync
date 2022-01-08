@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Collections.Generic;
+using System;
 
 namespace PleaseResync
 {
@@ -77,7 +78,6 @@ namespace PleaseResync
         /// <param name="playerCount">Number of players playing on this device. this number must be exactly the same in every Sessions for that particular device</param>
         /// <param name="remoteConfiguration">As the given device is not local to the Session, we must provide a way to communicate with that given device, this configuration will be passed to the session adapter</param>
         public abstract void AddRemoteDevice(uint deviceId, uint playerCount, object remoteConfiguration);
-
         /// <summary>
         /// Poll must be called periodically to give the Session a chance to perform some work and synchronize devices.
         /// </summary>
@@ -86,27 +86,14 @@ namespace PleaseResync
         /// IsRunning returns true when all the Sessions are synchronized and ready to accept inputs.
         /// </summary>
         public abstract bool IsRunning();
-
-        /// <summary>
-        /// SetFrameInputs sets this local device inputs for the current frame + frameDelay.
-        /// This must be called before calling GetFrameInputs()
-        /// </summary>
-        /// <param name="inputs">inputs gathered from this device for all of its local players</param>
-        public abstract void SetFrameInputs(byte[] input);
-        /// <summary>
-        /// GetFrameInputs returns all inputs from all devices and players for the current frame.
-        /// Sometimes, the inputs of one or more remote devices won't be available for this frame, but this is not a problem since
-        /// the session will synchronize them later on and trigger a rollback to correct your game state with the newly arrived inputs.
-        /// </summary>
-        /// <returns>inputs ordered by deviceID asc</returns>
-        public abstract byte[] GetFrameInputs();
         /// <summary>
         /// AdvanceFrame will tell the session to increment the current frame by one and that you are ready to work on the next frame.
         /// This must be called after you set your local inputs for this frame and simulated your game frame with the inputs provided by the session.
         /// </summary>
         /// <returns>a list of actions to perform in order before calling AdvanceFrame again</returns>
-        public abstract List<SessionAction> AdvanceFrame();
-
-        internal virtual uint SendMessageTo(uint deviceId, DeviceMessage message) { return 0; }
+        public abstract List<SessionAction> AdvanceFrame(byte[] localInput);
+        public abstract void SetLocalFrameDelay(uint delay);
+        internal abstract uint SendMessageTo(uint deviceId, DeviceMessage message);
+        internal abstract void AddRemoteInput(uint deviceId, DeviceInputMessage message);
     }
 }

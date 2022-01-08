@@ -31,8 +31,6 @@ namespace PleaseResync
         {
             Debug.Assert(deviceInput != null);
 
-            UpdateNetwork();
-
             UpdateSyncFrame();
 
             var actions = new List<SessionAction>();
@@ -55,19 +53,19 @@ namespace PleaseResync
                 AddLocalInput(localDeviceId, deviceInput);
                 var inputs = GetFrameInput(_timeSync.LocalFrame).Inputs;
 
-                // TODO SEND LOCAL INPUT TO REMOTE DEVICES
-
                 actions.Add(new SessionAdvanceFrameAction(inputs));
                 actions.Add(new SessionSaveGameAction(_stateStorage, _timeSync.LocalFrame));
+
+                foreach (var device in _devices)
+                {
+                    if (device.Type == Device.DeviceType.Remote)
+                    {
+                        device.SendMessage(new DeviceInputMessage((uint)_timeSync.LocalFrame, inputs));
+                    }
+                }
             }
 
             return actions;
-        }
-
-        private void UpdateNetwork()
-        {
-            // update the remote frame variables and remoteFrameAdvantage variables of each device if they recieved an input packet.
-            throw new NotImplementedException();
         }
 
         private void UpdateSyncFrame()
@@ -80,6 +78,7 @@ namespace PleaseResync
             int foundFrame = finalFrame;
             for (int i = _timeSync.SyncFrame + 1; i <= finalFrame; i++)
             {
+                // TODO:
                 // find the first frame where the predicted and remote inputs don't match
                 // we assume the last frame is still correct
                 // foundFrame =  i - 1;
@@ -88,12 +87,18 @@ namespace PleaseResync
             _timeSync.SyncFrame = foundFrame;
         }
 
-        internal void AddRemoteInput(uint deviceId, uint frame, byte[] deviceInput)
+        internal void AddRemoteInput(uint deviceId, int frame, byte[] deviceInput)
         {
             // only allow adding input to the local device
             Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Remote);
+            // update device variables if needed
+            if (_devices[deviceId].RemoteFrame < frame)
+            {
+                _devices[deviceId].RemoteFrame = frame;
+                _devices[deviceId].RemoteFrameAdvantage = _timeSync.LocalFrame - frame;
+            }
 
-            AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
+            AddDeviceInput(frame, deviceId, deviceInput);
         }
 
         private void AddLocalInput(uint deviceId, byte[] deviceInput)
@@ -120,7 +125,7 @@ namespace PleaseResync
             return _deviceInputs[deviceId].GetInput(frame);
         }
 
-        public GameInput GetFrameInput(int frame)
+        private GameInput GetFrameInput(int frame)
         {
             uint playerCount = 0;
             foreach (var device in _devices)

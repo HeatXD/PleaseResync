@@ -12,6 +12,7 @@ namespace PleaseResync
         private Device _localDevice;
         private readonly Device[] _allDevices;
         private readonly SessionAdapter _sessionAdapter;
+        private Sync _sync;
 
         public override Device LocalDevice => _localDevice;
         public override Device[] AllDevices => _allDevices;
@@ -19,6 +20,7 @@ namespace PleaseResync
         public Peer2PeerSession(uint inputSize, uint deviceCount, uint totalPlayerCount, SessionAdapter adapter) : base(inputSize, deviceCount, totalPlayerCount)
         {
             _allDevices = new Device[deviceCount];
+            _sync = new Sync(_allDevices, inputSize);
             _sessionAdapter = adapter;
         }
 
@@ -42,9 +44,12 @@ namespace PleaseResync
 
         public override void Poll()
         {
-            foreach (var device in _allDevices)
+            if (!IsRunning())
             {
-                device.Poll();
+                foreach (var device in _allDevices)
+                {
+                    device.Sync();
+                }
             }
 
             var messages = _sessionAdapter.ReceiveFrom();
@@ -53,28 +58,33 @@ namespace PleaseResync
                 _allDevices[deviceId].HandleMessage(message);
             }
         }
+
         public override bool IsRunning()
         {
             return _allDevices.All(device => device.State == Device.DeviceState.Running);
         }
 
-        public override void SetFrameInputs(byte[] input)
+        public override List<SessionAction> AdvanceFrame(byte[] localInput)
         {
-            throw new System.NotImplementedException();
-        }
-        public override byte[] GetFrameInputs()
-        {
-            throw new System.NotImplementedException();
-        }
-        public override List<SessionAction> AdvanceFrame()
-        {
-            throw new System.NotImplementedException();
+            Debug.Assert(localInput != null);
+
+            return _sync.AdvanceSync(_localDevice.Id, localInput);
         }
 
         internal override uint SendMessageTo(uint deviceId, DeviceMessage message)
         {
             // System.Console.WriteLine($"Sending message to remote device {deviceId}: {message}");
             return _sessionAdapter.SendTo(deviceId, message);
+        }
+
+        internal override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
+        {
+            _sync.AddRemoteInput(deviceId, (int)message.Frame, message.InputData);
+        }
+
+        public override void SetLocalFrameDelay(uint delay)
+        {
+            _sync.SetFrameDelay(delay, _localDevice.Id);
         }
     }
 }

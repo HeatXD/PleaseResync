@@ -73,33 +73,22 @@ namespace PleaseResync
             return $"Device {new { Id, PlayerCount }}";
         }
 
-        #region Poll
+        #region State Machine
 
-        public void Poll()
+        public void Sync()
         {
             uint now = Platform.GetCurrentTimeMS();
 
             if (Type == Device.DeviceType.Remote)
             {
-                switch (State)
+                uint interval = _syncRoundtripsRemaining == NUM_SYNC_ROUNDTRIPS ? SYNC_FIRST_RETRY_INTERVAL : SYNC_NEXT_RETRY_INTERVAL;
+                if (_lastSendTime + interval < now)
                 {
-                    case DeviceState.Syncing:
-                        {
-                            uint interval = _syncRoundtripsRemaining == NUM_SYNC_ROUNDTRIPS ? SYNC_FIRST_RETRY_INTERVAL : SYNC_NEXT_RETRY_INTERVAL;
-                            if (_lastSendTime + interval < now)
-                            {
-                                _syncRoundtripsRandomRequest = Platform.GetRandomUnsignedShort();
-                                SendMessage(new DeviceSyncMessage { DeviceId = Id, PlayerCount = PlayerCount, RandomRequest = _syncRoundtripsRandomRequest });
-                            }
-                            break;
-                        }
+                    _syncRoundtripsRandomRequest = Platform.GetRandomUnsignedShort();
+                    SendMessage(new DeviceSyncMessage { DeviceId = Id, PlayerCount = PlayerCount, RandomRequest = _syncRoundtripsRandomRequest });
                 }
             }
         }
-
-        #endregion
-
-        #region State Machine
 
         public void StartSyncing()
         {
@@ -147,6 +136,9 @@ namespace PleaseResync
                             FinishedSyncing();
                         }
                     }
+                    break;
+                case DeviceInputMessage inputMessage:
+                    _session.AddRemoteInput(Id, inputMessage);
                     break;
             }
         }

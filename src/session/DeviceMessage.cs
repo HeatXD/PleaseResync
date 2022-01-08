@@ -1,3 +1,5 @@
+using System;
+using System.Diagnostics;
 using MessagePack;
 
 namespace PleaseResync
@@ -45,5 +47,14 @@ namespace PleaseResync
         public uint Frame;
         [Key(2)]
         public byte[] InputData;
+
+        public DeviceInputMessage(uint frame, byte[] inputData)
+        {
+            Debug.Assert(inputData != null);
+
+            Frame = frame;
+            InputData = new byte[inputData.Length];
+            Array.Copy(inputData, InputData, inputData.Length);
+        }
     }
 }
