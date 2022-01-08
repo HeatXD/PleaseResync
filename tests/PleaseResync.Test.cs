@@ -91,8 +91,14 @@ namespace PleaseResyncTest
 
             for (int i = 0; i < 60; i++)
             {
+                foreach (var session in sessions)
+                {
+                    session.Poll();
+                }
+
                 var actions1 = session1.AdvanceFrame(new byte[] { 2, 4 });
                 var actions2 = session2.AdvanceFrame(new byte[] { 6, 7 });
+
                 System.Threading.Thread.Sleep(100);
             }
         }
