@@ -83,7 +83,7 @@ namespace PleaseResync
         }
         internal override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
         {
-            _sync.AddRemoteInput(deviceId, (int)message.Frame, message.InputData);
+            _sync.AddRemoteInput(deviceId, (int)message.Frame, message.Input);
         }
     }
 }

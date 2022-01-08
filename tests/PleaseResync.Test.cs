@@ -92,7 +92,9 @@ namespace PleaseResyncTest
 
             for (int i = 0; i < 60; i++)
             {
-                session1.AdvanceFrame(new byte[INPUT_SIZE]);
+                var res = session1.AdvanceFrame(new byte[INPUT_SIZE]);
+
+                System.Console.WriteLine(res);
 
                 System.Threading.Thread.Sleep(100);
             }

@@ -30,7 +30,7 @@ namespace PleaseResync
         public void SetInputs(uint offset, uint playerCount, byte[] deviceInputs)
         {
             Debug.Assert(deviceInputs != null);
-            Debug.Assert(offset + (playerCount * InputSize) < Inputs.Length);
+            Debug.Assert(offset + (playerCount * InputSize) <= Inputs.Length);
             Debug.Assert(deviceInputs.Length == playerCount * InputSize);
 
             Array.Copy(deviceInputs, 0, Inputs, offset, deviceInputs.Length);

@@ -66,7 +66,7 @@ namespace PleaseResync
                 {
                     if (device.Type == Device.DeviceType.Remote)
                     {
-                        device.SendMessage(new DeviceInputMessage((uint)_timeSync.LocalFrame, inputs));
+                        device.SendMessage(new DeviceInputMessage { Frame = (uint)_timeSync.LocalFrame, Input = inputs });
                     }
                 }
             }
