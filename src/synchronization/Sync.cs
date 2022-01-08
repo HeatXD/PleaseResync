@@ -47,7 +47,7 @@ namespace PleaseResync
                 for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
                 {
                     var inputs = GetFrameInput(i).Inputs;
-                    actions.Add(new SessionAdvanceFrameAction(inputs));
+                    actions.Add(new SessionAdvanceFrameAction(inputs, i));
                 }
                 actions.Add(new SessionSaveGameAction(_stateStorage, _timeSync.LocalFrame));
             }
@@ -59,7 +59,7 @@ namespace PleaseResync
                 AddLocalInput(localDeviceId, deviceInput);
                 var inputs = GetFrameInput(_timeSync.LocalFrame).Inputs;
 
-                actions.Add(new SessionAdvanceFrameAction(inputs));
+                actions.Add(new SessionAdvanceFrameAction(inputs, _timeSync.LocalFrame));
                 actions.Add(new SessionSaveGameAction(_stateStorage, _timeSync.LocalFrame));
 
                 foreach (var device in _devices)

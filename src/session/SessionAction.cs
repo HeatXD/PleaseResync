@@ -53,10 +53,11 @@ namespace PleaseResync
     {
         public byte[] Inputs;
 
-        public SessionAdvanceFrameAction(byte[] inputs)
+        public SessionAdvanceFrameAction(byte[] inputs, int frame)
         {
             Debug.Assert(inputs != null);
 
+            Frame = (uint)frame;
             Inputs = new byte[inputs.Length];
             Array.Copy(inputs, Inputs, inputs.Length);
         }

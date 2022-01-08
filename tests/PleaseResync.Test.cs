@@ -100,6 +100,7 @@ namespace PleaseResyncTest
 
                 System.Threading.Thread.Sleep(100);
             }
+            throw new System.SystemException();
         }
     }
 }
