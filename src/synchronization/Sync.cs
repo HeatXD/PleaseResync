@@ -88,7 +88,7 @@ namespace PleaseResync
             _timeSync.SyncFrame = foundFrame;
         }
 
-        internal void AddRemoteInput(uint deviceId, byte[] deviceInput)
+        internal void AddRemoteInput(uint deviceId, uint frame, byte[] deviceInput)
         {
             // only allow adding input to the local device
             Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Remote);
