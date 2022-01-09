@@ -21,22 +21,28 @@ namespace PleaseResync
 
         public bool IsTimeSynced(Device[] devices)
         {
+            int minRemoteFrame = int.MaxValue;
+            int maxRemoteFrameAdvantage = int.MinValue;
+
             foreach (var device in devices)
             {
                 if (device.Type == Device.DeviceType.Remote)
                 {
                     // find min remote frame
-                    if (device.RemoteFrame < RemoteFrame || RemoteFrame == InitialFrame)
+                    if (device.RemoteFrame < minRemoteFrame)
                     {
-                        RemoteFrame = device.RemoteFrame;
+                        minRemoteFrame = device.RemoteFrame;
                     }
                     // find max frame advantage
-                    if (device.RemoteFrameAdvantage > RemoteFrameAdvantage || RemoteFrameAdvantage == InitialFrame)
+                    if (device.RemoteFrameAdvantage > maxRemoteFrameAdvantage)
                     {
-                        RemoteFrameAdvantage = device.RemoteFrameAdvantage;
+                        maxRemoteFrameAdvantage = device.RemoteFrameAdvantage;
                     }
                 }
             }
+            // Set variables
+            RemoteFrame = minRemoteFrame;
+            RemoteFrameAdvantage = maxRemoteFrameAdvantage;
             // How far the client is ahead of the last reported frame by the remote clients           
             int localFrameAdvantage = LocalFrame - RemoteFrame;
             // How different is the frame advantage reported by the remote clients and this one
