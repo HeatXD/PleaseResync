@@ -3,6 +3,7 @@ using System.Net;
 using MessagePack;
 using System.Net.Sockets;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace PleaseResync
 {
@@ -19,7 +20,10 @@ namespace PleaseResync
         {
             _udpClient = new UdpClient();
             _udpClient.Client.Blocking = false;
-            _udpClient.Client.IOControl((IOControlCode)SIO_UDP_CONNRESET, new byte[] { 0, 0, 0, 0 }, null);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                _udpClient.Client.IOControl((IOControlCode)SIO_UDP_CONNRESET, new byte[] { 0, 0, 0, 0 }, null);
+            }
             _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             _udpClient.Client.Bind(endpoint);
             _remoteEndpoints = new IPEndPoint[Session.LIMIT_DEVICE_COUNT];
