@@ -6,11 +6,13 @@
     <RepositoryUrl>https://github.com/HeatXD/PleaseUndo</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <TargetFrameworks>net472;net5.0;netcoreapp3.1</TargetFrameworks>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageProjectUrl>https://github.com/HeatXD/PleaseUndo</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\"/>
     <PackageReference Include="MessagePack" Version="2.3.85" />
   </ItemGroup>
 </Project>
