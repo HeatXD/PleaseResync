@@ -97,6 +97,12 @@ namespace PleaseResync
             return new IPEndPoint(remoteAddress, remotePort);
         }
 
+        public void Close()
+        {
+            _udpClient.Close();
+            _udpClient.Dispose();
+        }
+
         #endregion
     }
 }

@@ -27,6 +27,7 @@ namespace PleaseResync
 
         public override void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)
         {
+            Debug.Assert(deviceId >= 0 && deviceId < DeviceCount, $"DeviceId {deviceId} should be between [0,  {DeviceCount}[");
             Debug.Assert(LocalDevice == null, $"Local device {deviceId} was already set.");
             Debug.Assert(_allDevices[deviceId] == null, $"Local device {deviceId} was already set.");
 
@@ -37,6 +38,7 @@ namespace PleaseResync
 
         public override void AddRemoteDevice(uint deviceId, uint playerCount, object remoteConfiguration)
         {
+            Debug.Assert(deviceId >= 0 && deviceId < DeviceCount, $"DeviceId {deviceId} should be between [0,  {DeviceCount}[");
             Debug.Assert(LocalDevice != null, "SetLocalDevice must be called before any call to AddRemoteDevice.");
             Debug.Assert(_allDevices[deviceId] == null, $"Remote device {deviceId} was already set.");
 
