@@ -83,11 +83,27 @@ namespace PleaseResync
             int foundFrame = finalFrame;
             for (int i = _timeSync.SyncFrame + 1; i <= finalFrame; i++)
             {
-                // TODO:
-                // find the first frame where the predicted and remote inputs don't match
-                // we assume the last frame is still correct
-                // foundFrame =  i - 1;
-                // break;
+                foreach (var input in _deviceInputs)
+                {
+                    if (input.GetPredictedInputs().Count > 0)
+                    {
+                        // frame was predicted and wrong.
+                        if (!input.GetPredictedInputs().Peek().Equal(input.GetInput(i), true) &&
+                            input.GetPredictedInputs().Peek().Frame == i)
+                        {
+                            // set found frame
+                            foundFrame = i - 1;
+                            // remove the wrongly predicted input from the queue
+                            input.GetPredictedInputs().Dequeue();
+                            break;
+                        }
+                        else if (input.GetPredictedInputs().Peek().Equal(input.GetInput(i), false))
+                        {
+                            // right prediction! remove from the prediction queue
+                            input.GetPredictedInputs().Dequeue();
+                        }
+                    }
+                }
             }
             _timeSync.SyncFrame = foundFrame;
         }
@@ -105,7 +121,7 @@ namespace PleaseResync
             // only allow adding input to the local device
             Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Remote);
             // update device variables if needed
-            if (_devices[deviceId].RemoteFrame <= frame)
+            if (_devices[deviceId].RemoteFrame < frame)
             {
                 _devices[deviceId].RemoteFrame = frame;
                 _devices[deviceId].RemoteFrameAdvantage = _timeSync.LocalFrame - frame;

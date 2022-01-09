@@ -90,12 +90,13 @@ namespace PleaseResyncTest
                 System.Threading.Thread.Sleep(10);
             }
 
-            for (int i = 0; i < 60; i++)
+            for (int i = 0; i < 40; i++)
             {
                 foreach (var session in sessions)
                 {
                     session.Poll();
                 }
+
                 var actions1 = session1.AdvanceFrame(new byte[] { 2, 4 });
                 var actions2 = session2.AdvanceFrame(new byte[] { 6, 7 });
             }
