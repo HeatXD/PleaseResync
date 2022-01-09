@@ -14,6 +14,7 @@ namespace PleaseResyncTest
         private static readonly string LOCAL_ADDRESS = "127.0.0.1";
 
         [TestMethod]
+        [TimeoutAttribute(1000)]
         public void Test_SyncDevices()
         {
             uint device1 = 0;
@@ -37,30 +38,21 @@ namespace PleaseResyncTest
             session3.AddRemoteDevice(device1, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_1));
             session3.AddRemoteDevice(device2, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_2));
 
-            // Should roughly take ~500ms to get all sessions verified.
-            for (int i = 0; i < 60; i++)
+            // Should roughly take 20 iterations to get all sessions verified.
+            while (!sessions.All(session => session.IsRunning()))
             {
+                System.Console.WriteLine("Iteration");
                 foreach (var session in sessions)
                 {
                     session.Poll();
                 }
 
-                System.Threading.Thread.Sleep(100);
-            }
-
-            Assert.IsTrue(session1.IsRunning());
-            Assert.IsTrue(session2.IsRunning());
-            Assert.IsTrue(session3.IsRunning());
-
-            for (int i = 0; i < 60; i++)
-            {
-                session1.AdvanceFrame(new byte[INPUT_SIZE]);
-
-                System.Threading.Thread.Sleep(100);
+                System.Threading.Thread.Sleep(50);
             }
         }
 
         [TestMethod]
+        [TimeoutAttribute(2000)]
         public void Test_SyncInputAcrossDevices()
         {
             uint device1 = 0;
@@ -76,32 +68,23 @@ namespace PleaseResyncTest
             session2.SetLocalDevice(device2, 1, 0);
             session2.AddRemoteDevice(device1, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_1));
 
-            // Should roughly take ~500ms to get all sessions verified.
-            for (int i = 0; i < 120; i++)
+            while (!sessions.All(session => session.IsRunning()))
             {
                 foreach (var session in sessions)
                 {
                     session.Poll();
                 }
 
-                System.Threading.Thread.Sleep(100);
+                System.Threading.Thread.Sleep(10);
             }
 
-            Assert.IsTrue(session1.IsRunning());
-            Assert.IsTrue(session2.IsRunning());
-
-            for (int i = 0; i < 60; i++)
+            foreach (var session in sessions)
             {
-                foreach (var session in sessions)
-                {
-                    session.Poll();
-                }
-
-                var actions1 = session1.AdvanceFrame(new byte[] { 2, 4 });
-                var actions2 = session2.AdvanceFrame(new byte[] { 6, 7 });
-
-                System.Threading.Thread.Sleep(100);
+                session.Poll();
             }
+
+            var actions1 = session1.AdvanceFrame(new byte[] { 2, 4 });
+            var actions2 = session2.AdvanceFrame(new byte[] { 6, 7 });
         }
     }
 }
