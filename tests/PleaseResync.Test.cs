@@ -77,12 +77,13 @@ namespace PleaseResyncTest
             session2.AddRemoteDevice(device1, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_1));
 
             // Should roughly take ~500ms to get all sessions verified.
-            for (int i = 0; i < 60; i++)
+            for (int i = 0; i < 120; i++)
             {
                 foreach (var session in sessions)
                 {
                     session.Poll();
                 }
+
                 System.Threading.Thread.Sleep(100);
             }
 

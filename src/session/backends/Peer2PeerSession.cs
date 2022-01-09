@@ -81,7 +81,7 @@ namespace PleaseResync
 
         internal override uint SendMessageTo(uint deviceId, DeviceMessage message)
         {
-            //System.Console.WriteLine($"Sending message to remote device {deviceId}: {message}");
+            System.Console.WriteLine($"Sending message to remote device {deviceId}: {message}");
             return _sessionAdapter.SendTo(deviceId, message);
         }
 
