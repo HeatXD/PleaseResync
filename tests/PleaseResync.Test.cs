@@ -149,6 +149,22 @@ namespace PleaseResyncTest
             Assert.AreEqual(2, ((SessionAdvanceFrameAction)actions1[3]).Inputs[1]); // local input
             Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions1[3]).Inputs[2]); // we predict the input for the remote device to be the same as the previous frame
             Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions1[3]).Inputs[3]); // we predict the input for the remote device to be the same as the previous frame
+            // session2
+            Assert.IsInstanceOfType(actions2[0], typeof(SessionLoadGameAction)); // rollback before the first frame
+            Assert.AreEqual(0, ((SessionSaveGameAction)actions2[0]).Frame);
+            Assert.IsInstanceOfType(actions2[1], typeof(SessionAdvanceFrameAction)); // resimulate frame 1
+            Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions2[1]).Frame);
+            Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions2[1]).Inputs[0]); // we got the remote inputs now :)
+            Assert.AreEqual(2, ((SessionAdvanceFrameAction)actions2[1]).Inputs[1]); // we got the remote inputs now :)
+            Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions2[1]).Inputs[2]); // local input
+            Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions2[1]).Inputs[3]); // local input
+            Assert.IsInstanceOfType(actions2[2], typeof(SessionSaveGameAction)); // save state at frame 1, since we know this state is the last correct state
+            Assert.IsInstanceOfType(actions2[3], typeof(SessionAdvanceFrameAction)); // simulate frame 2
+            Assert.AreEqual(2, ((SessionAdvanceFrameAction)actions2[3]).Frame);
+            Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions2[3]).Inputs[0]); // we got the remote inputs now :)
+            Assert.AreEqual(2, ((SessionAdvanceFrameAction)actions2[3]).Inputs[1]); // we got the remote inputs now :)
+            Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions2[3]).Inputs[2]); // local input
+            Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions2[3]).Inputs[3]); // local input
 
             foreach (var adapter in adapters)
             {
