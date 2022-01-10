@@ -117,7 +117,7 @@ namespace PleaseResyncTest
             Assert.AreEqual((byte)3, ((SessionAdvanceFrameAction)actions2[0]).Inputs[2]);
             Assert.AreEqual((byte)4, ((SessionAdvanceFrameAction)actions2[0]).Inputs[3]);
 
-            for (int i = 0; i < 20; i++)
+            for (int i = 0; i < 2; i++)
             {
                 foreach (var session in sessions)
                 {
