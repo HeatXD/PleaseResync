@@ -96,77 +96,59 @@ namespace PleaseResyncTest
                 session.Poll();
             }
 
+            // step one: advance to the first frame
+            // since it's the first frame: there is no chance to have a rollback right now
             var actions1 = session1.AdvanceFrame(new byte[] { 1, 2 });
             var actions2 = session2.AdvanceFrame(new byte[] { 3, 4 });
 
-            Assert.AreEqual(2, actions1.Count);
-            Assert.AreEqual(2, actions2.Count);
-            Assert.IsInstanceOfType(actions1[0], typeof(SessionAdvanceFrameAction));
-            Assert.IsInstanceOfType(actions1[1], typeof(SessionSaveGameAction));
-            Assert.IsInstanceOfType(actions2[0], typeof(SessionAdvanceFrameAction));
-            Assert.IsInstanceOfType(actions2[1], typeof(SessionSaveGameAction));
+            // session1
+            Assert.IsInstanceOfType(actions1[0], typeof(SessionSaveGameAction)); // the first ever action must be to save the state before any simulation, otherwise we would never be able to rollback before the first frame
+            Assert.AreEqual(0, ((SessionSaveGameAction)actions1[0]).Frame);
+            Assert.IsInstanceOfType(actions1[1], typeof(SessionAdvanceFrameAction)); // then we are ready to simulate the first frame
+            Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions1[1]).Frame);
+            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)actions1[1]).Inputs[0]); // local input
+            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)actions1[1]).Inputs[1]); // local input
+            Assert.AreEqual((byte)0, ((SessionAdvanceFrameAction)actions1[1]).Inputs[2]); // these inputs are not yet known to session1 and should be zero
+            Assert.AreEqual((byte)0, ((SessionAdvanceFrameAction)actions1[1]).Inputs[3]); // these inputs are not yet known to session1 and should be zero
+            // session2
+            Assert.IsInstanceOfType(actions2[0], typeof(SessionSaveGameAction)); // the first ever action must be to save the state before any simulation, otherwise we would never be able to rollback before the first frame
+            Assert.AreEqual(0, ((SessionSaveGameAction)actions2[0]).Frame);
+            Assert.IsInstanceOfType(actions2[1], typeof(SessionAdvanceFrameAction)); // then we are ready to simulate the first frame
+            Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions2[1]).Frame);
+            Assert.AreEqual((byte)0, ((SessionAdvanceFrameAction)actions2[1]).Inputs[0]); // these inputs are not yet known to session1 and should be zero
+            Assert.AreEqual((byte)0, ((SessionAdvanceFrameAction)actions2[1]).Inputs[1]); // these inputs are not yet known to session1 and should be zero
+            Assert.AreEqual((byte)3, ((SessionAdvanceFrameAction)actions2[1]).Inputs[2]); // local input
+            Assert.AreEqual((byte)4, ((SessionAdvanceFrameAction)actions2[1]).Inputs[3]); // local input
 
-            Assert.AreEqual((uint)1, ((SessionAdvanceFrameAction)actions1[0]).Frame);
-            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)actions1[0]).Inputs[0]);
-            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)actions1[0]).Inputs[1]);
-            Assert.AreEqual((byte)0, ((SessionAdvanceFrameAction)actions1[0]).Inputs[2]); // these inputs are not yet known to session1
-            Assert.AreEqual((byte)0, ((SessionAdvanceFrameAction)actions1[0]).Inputs[3]); // these inputs are not yet known to session1
-            Assert.AreEqual((uint)1, ((SessionAdvanceFrameAction)actions2[0]).Frame);
-            Assert.AreEqual((byte)0, ((SessionAdvanceFrameAction)actions2[0]).Inputs[0]); // these inputs are not yet known to session2
-            Assert.AreEqual((byte)0, ((SessionAdvanceFrameAction)actions2[0]).Inputs[1]); // these inputs are not yet known to session2
-            Assert.AreEqual((byte)3, ((SessionAdvanceFrameAction)actions2[0]).Inputs[2]);
-            Assert.AreEqual((byte)4, ((SessionAdvanceFrameAction)actions2[0]).Inputs[3]);
-
-            for (int i = 0; i < 2; i++)
+            // give a chance to remote inputs to flow from one session to another
+            System.Threading.Thread.Sleep(100);
+            foreach (var session in sessions)
             {
-                foreach (var session in sessions)
-                {
-                    session.Poll(); // Give a chance to make the inputs flow from one session to another
-                }
-
-                actions1 = session1.AdvanceFrame(new byte[] { 1, 2 }); // send the same inputs as last frame
-                actions2 = session2.AdvanceFrame(new byte[] { 3, 4 }); // send the same inputs as last frame
+                session.Poll();
             }
 
-            Assert.AreEqual(6, actions1.Count); // We should get a rollback for frame1 since we get different inputs, and a normal advance frame for frame2 (session1)
-            Assert.AreEqual(6, actions2.Count); // We should get a rollback for frame1 since we get different inputs, and a normal advance frame for frame2 (session2)
+            // step two: advance to the second frame
+            // since remote inputs should be arrived now, the simulation for the first frame for both sessions were done with incomplete inputs...
+            // ...so we have to rollback and replay the first frame with the newly arrived inputs
+            actions1 = session1.AdvanceFrame(new byte[] { 1, 2 });
+            actions2 = session2.AdvanceFrame(new byte[] { 3, 4 });
 
-            Assert.IsInstanceOfType(actions1[0], typeof(SessionAdvanceFrameAction));
-            Assert.IsInstanceOfType(actions1[1], typeof(SessionSaveGameAction));
-            Assert.IsInstanceOfType(actions1[2], typeof(SessionLoadGameAction));
-            Assert.IsInstanceOfType(actions1[3], typeof(SessionAdvanceFrameAction));
-            Assert.IsInstanceOfType(actions1[4], typeof(SessionAdvanceFrameAction));
-            Assert.IsInstanceOfType(actions1[5], typeof(SessionSaveGameAction));
-
-            Assert.AreEqual((uint)2, ((SessionAdvanceFrameAction)actions1[0]).Frame); // First one should be the normal advance for the current frame (frame2) (session1)
-            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)actions1[0]).Inputs[0]);
-            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)actions1[0]).Inputs[1]);
-            Assert.AreEqual((uint)1, ((SessionLoadGameAction)actions1[2]).Frame); // Then we should go back to frame1 (session1)
-            Assert.AreEqual((uint)1, ((SessionAdvanceFrameAction)actions1[3]).Frame); // And then resimulate frame1 (session1)
-            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)actions1[3]).Inputs[0]);
-            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)actions1[3]).Inputs[1]);
-            Assert.AreEqual((byte)3, ((SessionAdvanceFrameAction)actions1[3]).Inputs[2]);
-            Assert.AreEqual((byte)4, ((SessionAdvanceFrameAction)actions1[3]).Inputs[3]);
-            Assert.AreEqual((uint)2, ((SessionAdvanceFrameAction)actions1[4]).Frame); // And then resimulate frame2 (session1)
-            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)actions1[4]).Inputs[0]);
-            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)actions1[4]).Inputs[1]);
-            Assert.AreEqual((byte)3, ((SessionAdvanceFrameAction)actions1[4]).Inputs[2]);
-            Assert.AreEqual((byte)4, ((SessionAdvanceFrameAction)actions1[4]).Inputs[3]);
-
-            Assert.AreEqual((uint)2, ((SessionAdvanceFrameAction)actions2[0]).Frame); // First one should be the normal advance for the current frame (frame2) (session2)
-            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)actions2[0]).Inputs[0]);
-            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)actions2[0]).Inputs[1]);
-            Assert.AreEqual((uint)1, ((SessionLoadGameAction)actions2[2]).Frame); // Then we should go back to frame1 (session2)
-            Assert.AreEqual((uint)1, ((SessionAdvanceFrameAction)actions2[3]).Frame); // And then resimulate frame1 (session2)
-            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)actions2[3]).Inputs[0]);
-            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)actions2[3]).Inputs[1]);
-            Assert.AreEqual((byte)3, ((SessionAdvanceFrameAction)actions2[3]).Inputs[2]);
-            Assert.AreEqual((byte)4, ((SessionAdvanceFrameAction)actions2[3]).Inputs[3]);
-            Assert.AreEqual((uint)2, ((SessionAdvanceFrameAction)actions2[4]).Frame); // And then resimulate frame2 (session2)
-            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)actions2[4]).Inputs[0]);
-            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)actions2[4]).Inputs[1]);
-            Assert.AreEqual((byte)3, ((SessionAdvanceFrameAction)actions2[4]).Inputs[2]);
-            Assert.AreEqual((byte)4, ((SessionAdvanceFrameAction)actions2[4]).Inputs[3]);
+            // session1
+            Assert.IsInstanceOfType(actions1[0], typeof(SessionLoadGameAction)); // rollback before the first frame
+            Assert.AreEqual(0, ((SessionSaveGameAction)actions1[0]).Frame);
+            Assert.IsInstanceOfType(actions1[1], typeof(SessionAdvanceFrameAction)); // resimulate frame 1
+            Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions1[1]).Frame);
+            Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions1[1]).Inputs[0]); // local input
+            Assert.AreEqual(2, ((SessionAdvanceFrameAction)actions1[1]).Inputs[1]); // local input
+            Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions1[1]).Inputs[2]); // we got the remote inputs now :)
+            Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions1[1]).Inputs[3]); // we got the remote inputs now :)
+            Assert.IsInstanceOfType(actions1[2], typeof(SessionSaveGameAction)); // save state at frame 1, since we know this state is the last correct state
+            Assert.IsInstanceOfType(actions1[3], typeof(SessionAdvanceFrameAction)); // simulate frame 2
+            Assert.AreEqual(2, ((SessionAdvanceFrameAction)actions1[3]).Frame);
+            Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions1[3]).Inputs[0]); // local input
+            Assert.AreEqual(2, ((SessionAdvanceFrameAction)actions1[3]).Inputs[1]); // local input
+            Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions1[3]).Inputs[2]); // we predict the input for the remote device to be the same as the previous frame
+            Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions1[3]).Inputs[3]); // we predict the input for the remote device to be the same as the previous frame
 
             foreach (var adapter in adapters)
             {
@@ -175,4 +157,3 @@ namespace PleaseResyncTest
         }
     }
 }
-
