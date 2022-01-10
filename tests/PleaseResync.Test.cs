@@ -102,6 +102,7 @@ namespace PleaseResyncTest
             var actions2 = session2.AdvanceFrame(new byte[] { 3, 4 });
 
             // session1
+            Assert.AreEqual(2, actions1.Count);
             Assert.IsInstanceOfType(actions1[0], typeof(SessionSaveGameAction)); // the first ever action must be to save the state before any simulation, otherwise we would never be able to rollback before the first frame
             Assert.AreEqual(0, ((SessionSaveGameAction)actions1[0]).Frame);
             Assert.IsInstanceOfType(actions1[1], typeof(SessionAdvanceFrameAction)); // then we are ready to simulate the first frame
@@ -111,6 +112,7 @@ namespace PleaseResyncTest
             Assert.AreEqual((byte)0, ((SessionAdvanceFrameAction)actions1[1]).Inputs[2]); // these inputs are not yet known to session1 and should be zero
             Assert.AreEqual((byte)0, ((SessionAdvanceFrameAction)actions1[1]).Inputs[3]); // these inputs are not yet known to session1 and should be zero
             // session2
+            Assert.AreEqual(2, actions2.Count);
             Assert.IsInstanceOfType(actions2[0], typeof(SessionSaveGameAction)); // the first ever action must be to save the state before any simulation, otherwise we would never be able to rollback before the first frame
             Assert.AreEqual(0, ((SessionSaveGameAction)actions2[0]).Frame);
             Assert.IsInstanceOfType(actions2[1], typeof(SessionAdvanceFrameAction)); // then we are ready to simulate the first frame
@@ -134,6 +136,7 @@ namespace PleaseResyncTest
             actions2 = session2.AdvanceFrame(new byte[] { 3, 4 });
 
             // session1
+            Assert.AreEqual(4, actions1.Count);
             Assert.IsInstanceOfType(actions1[0], typeof(SessionLoadGameAction)); // rollback before the first frame
             Assert.AreEqual(0, ((SessionSaveGameAction)actions1[0]).Frame);
             Assert.IsInstanceOfType(actions1[1], typeof(SessionAdvanceFrameAction)); // resimulate frame 1
@@ -150,6 +153,7 @@ namespace PleaseResyncTest
             Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions1[3]).Inputs[2]); // we predict the input for the remote device to be the same as the previous frame
             Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions1[3]).Inputs[3]); // we predict the input for the remote device to be the same as the previous frame
             // session2
+            Assert.AreEqual(4, actions2.Count);
             Assert.IsInstanceOfType(actions2[0], typeof(SessionLoadGameAction)); // rollback before the first frame
             Assert.AreEqual(0, ((SessionSaveGameAction)actions2[0]).Frame);
             Assert.IsInstanceOfType(actions2[1], typeof(SessionAdvanceFrameAction)); // resimulate frame 1
@@ -165,6 +169,28 @@ namespace PleaseResyncTest
             Assert.AreEqual(2, ((SessionAdvanceFrameAction)actions2[3]).Inputs[1]); // we got the remote inputs now :)
             Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions2[3]).Inputs[2]); // local input
             Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions2[3]).Inputs[3]); // local input
+
+            // step three: advance to the third frame
+            // we are sending the same inputs as frame 2 and there should be no rollbacks since the same inputs should be predicted
+            actions1 = session1.AdvanceFrame(new byte[] { 1, 2 });
+            actions2 = session2.AdvanceFrame(new byte[] { 3, 4 });
+
+            // session1
+            Assert.AreEqual(1, actions1.Count);
+            Assert.IsInstanceOfType(actions1[0], typeof(SessionAdvanceFrameAction));
+            Assert.AreEqual(3, ((SessionSaveGameAction)actions1[0]).Frame);
+            Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions1[0]).Inputs[0]); // local input
+            Assert.AreEqual(2, ((SessionAdvanceFrameAction)actions1[0]).Inputs[1]); // local input
+            Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions1[0]).Inputs[2]); // predicted input
+            Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions1[0]).Inputs[3]); // predicted input
+            // session2
+            Assert.AreEqual(1, actions2.Count);
+            Assert.IsInstanceOfType(actions2[0], typeof(SessionAdvanceFrameAction));
+            Assert.AreEqual(3, ((SessionSaveGameAction)actions2[0]).Frame);
+            Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions2[0]).Inputs[0]); // predicted input
+            Assert.AreEqual(2, ((SessionAdvanceFrameAction)actions2[0]).Inputs[1]); // predicted input
+            Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions2[0]).Inputs[2]); // local input
+            Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions2[0]).Inputs[3]); // local input
 
             foreach (var adapter in adapters)
             {
