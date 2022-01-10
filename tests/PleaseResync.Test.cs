@@ -115,13 +115,16 @@ namespace PleaseResyncTest
             Assert.AreEqual((byte)3, advanceFrameAction2.Inputs[2]);
             Assert.AreEqual((byte)4, advanceFrameAction2.Inputs[3]);
 
-            foreach (var session in sessions)
+            for (int i = 0; i < 20; i++)
             {
-                session.Poll(); // Give a chance to make the inputs flow from one session to another
-            }
+                foreach (var session in sessions)
+                {
+                    session.Poll(); // Give a chance to make the inputs flow from one session to another
+                }
 
-            actions1 = session1.AdvanceFrame(new byte[] { 1, 2 }); // send the same inputs as last frame
-            actions2 = session2.AdvanceFrame(new byte[] { 3, 4 }); // send the same inputs as last frame
+                actions1 = session1.AdvanceFrame(new byte[] { 1, 2 }); // send the same inputs as last frame
+                actions2 = session2.AdvanceFrame(new byte[] { 3, 4 }); // send the same inputs as last frame
+            }
 
             var advanceFrameActions1 = actions1.Where(action => action is SessionAdvanceFrameAction).ToArray();
             var advanceFrameActions2 = actions2.Where(action => action is SessionAdvanceFrameAction).ToArray();
