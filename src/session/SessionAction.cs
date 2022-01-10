@@ -11,7 +11,7 @@ namespace PleaseResync
         /// <summary>
         /// Frame this action refers to.
         /// </summary>
-        public uint Frame;
+        public int Frame;
     }
 
     /// <summary>
@@ -19,15 +19,22 @@ namespace PleaseResync
     /// </summary>
     public class SessionLoadGameAction : SessionAction
     {
-        public StateStorage Storage;
+        private StateStorage _storage;
 
         public SessionLoadGameAction(StateStorage storage, int frame)
         {
-            Frame = (uint)frame;
-            Storage = storage;
+            Debug.Assert(frame >= 0);
+
+            Frame = frame;
+            _storage = storage;
         }
 
-        public override string ToString() { return $"{typeof(SessionLoadGameAction)}: {new { Frame, Storage }}"; }
+        public byte[] Load()
+        {
+            return _storage.LoadFrame(Frame);
+        }
+
+        public override string ToString() { return $"{typeof(SessionLoadGameAction)}: {new { Frame, _storage }}"; }
     }
 
     /// <summary>
@@ -35,15 +42,22 @@ namespace PleaseResync
     /// </summary>
     public class SessionSaveGameAction : SessionAction
     {
-        public StateStorage Storage;
+        private StateStorage _storage;
 
         public SessionSaveGameAction(StateStorage storage, int frame)
         {
-            Frame = (uint)frame;
-            Storage = storage;
+            Debug.Assert(frame >= 0);
+
+            Frame = frame;
+            _storage = storage;
         }
 
-        public override string ToString() { return $"{typeof(SessionSaveGameAction)}: {new { Frame, Storage }}"; }
+        public void Save(byte[] gameState)
+        {
+            _storage.SaveToFrame(Frame, gameState);
+        }
+
+        public override string ToString() { return $"{typeof(SessionSaveGameAction)}: {new { Frame, _storage }}"; }
     }
 
     /// <summary>
@@ -57,7 +71,7 @@ namespace PleaseResync
         {
             Debug.Assert(inputs != null);
 
-            Frame = (uint)frame;
+            Frame = frame;
             Inputs = new byte[inputs.Length];
             Array.Copy(inputs, Inputs, inputs.Length);
         }

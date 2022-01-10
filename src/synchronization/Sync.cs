@@ -17,7 +17,7 @@ namespace PleaseResync
             _devices = devices;
             _inputSize = inputSize;
             _timeSync = new TimeSync();
-            _stateStorage = new StateStorage();
+            _stateStorage = new StateStorage(TimeSync.MaxRollbackFrames);
             _deviceInputs = new InputQueue[_devices.Length];
         }
 
@@ -43,17 +43,24 @@ namespace PleaseResync
             // rollback update
             if (_timeSync.ShouldRollback())
             {
-                actions.Add(new SessionLoadGameAction(_stateStorage, _timeSync.SyncFrame + 1));
+                actions.Add(new SessionLoadGameAction(_stateStorage, _timeSync.SyncFrame));
                 for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
                 {
                     var inputs = GetFrameInput(i).Inputs;
                     actions.Add(new SessionAdvanceFrameAction(inputs, i));
+                    actions.Add(new SessionSaveGameAction(_stateStorage, i));
                 }
-                actions.Add(new SessionSaveGameAction(_stateStorage, _timeSync.LocalFrame));
             }
             // normal update
             if (_timeSync.IsTimeSynced(_devices))
             {
+                // create savestate at the initialFrame to support rolling back to it
+                // for example if initframe = 0 then 0 will be first save option to rollback to.
+                if (_timeSync.LocalFrame == TimeSync.InitialFrame)
+                {
+                    actions.Add(new SessionSaveGameAction(_stateStorage, _timeSync.LocalFrame));
+                }
+
                 _timeSync.LocalFrame++;
 
                 AddLocalInput(localDeviceId, deviceInput);
