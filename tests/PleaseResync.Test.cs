@@ -170,6 +170,13 @@ namespace PleaseResyncTest
             Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions2[3]).Inputs[2]); // local input
             Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions2[3]).Inputs[3]); // local input
 
+            // give a chance to remote inputs to flow from one session to another
+            System.Threading.Thread.Sleep(100);
+            foreach (var session in sessions)
+            {
+                session.Poll();
+            }
+
             // step three: advance to the third frame
             // we are sending the same inputs as frame 2 and there should be no rollbacks since the same inputs should be predicted
             actions1 = session1.AdvanceFrame(new byte[] { 1, 2 });
