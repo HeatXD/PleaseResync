@@ -99,21 +99,23 @@ namespace PleaseResyncTest
             var actions1 = session1.AdvanceFrame(new byte[] { 1, 2 });
             var actions2 = session2.AdvanceFrame(new byte[] { 3, 4 });
 
-            var advanceFrameAction1 = actions1.Find(action => action is SessionAdvanceFrameAction) as SessionAdvanceFrameAction;
-            var advanceFrameAction2 = actions2.Find(action => action is SessionAdvanceFrameAction) as SessionAdvanceFrameAction;
+            Assert.AreEqual(2, actions1.Count);
+            Assert.AreEqual(2, actions2.Count);
+            Assert.IsInstanceOfType(actions1[0], typeof(SessionAdvanceFrameAction));
+            Assert.IsInstanceOfType(actions1[1], typeof(SessionSaveGameAction));
+            Assert.IsInstanceOfType(actions2[0], typeof(SessionAdvanceFrameAction));
+            Assert.IsInstanceOfType(actions2[1], typeof(SessionSaveGameAction));
 
-            Assert.IsNotNull(advanceFrameAction1);
-            Assert.IsNotNull(advanceFrameAction2);
-            Assert.AreEqual((uint)1, advanceFrameAction1.Frame);
-            Assert.AreEqual((uint)1, advanceFrameAction2.Frame);
-            Assert.AreEqual((byte)1, advanceFrameAction1.Inputs[0]);
-            Assert.AreEqual((byte)2, advanceFrameAction1.Inputs[1]);
-            Assert.AreEqual((byte)0, advanceFrameAction1.Inputs[2]); // these inputs are not yet known to session1
-            Assert.AreEqual((byte)0, advanceFrameAction1.Inputs[3]); // these inputs are not yet known to session1
-            Assert.AreEqual((byte)0, advanceFrameAction2.Inputs[0]); // these inputs are not yet known to session2
-            Assert.AreEqual((byte)0, advanceFrameAction2.Inputs[1]); // these inputs are not yet known to session2
-            Assert.AreEqual((byte)3, advanceFrameAction2.Inputs[2]);
-            Assert.AreEqual((byte)4, advanceFrameAction2.Inputs[3]);
+            Assert.AreEqual((uint)1, ((SessionAdvanceFrameAction)actions1[0]).Frame);
+            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)actions1[0]).Inputs[0]);
+            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)actions1[0]).Inputs[1]);
+            Assert.AreEqual((byte)0, ((SessionAdvanceFrameAction)actions1[0]).Inputs[2]); // these inputs are not yet known to session1
+            Assert.AreEqual((byte)0, ((SessionAdvanceFrameAction)actions1[0]).Inputs[3]); // these inputs are not yet known to session1
+            Assert.AreEqual((uint)1, ((SessionAdvanceFrameAction)actions2[0]).Frame);
+            Assert.AreEqual((byte)0, ((SessionAdvanceFrameAction)actions2[0]).Inputs[0]); // these inputs are not yet known to session2
+            Assert.AreEqual((byte)0, ((SessionAdvanceFrameAction)actions2[0]).Inputs[1]); // these inputs are not yet known to session2
+            Assert.AreEqual((byte)3, ((SessionAdvanceFrameAction)actions2[0]).Inputs[2]);
+            Assert.AreEqual((byte)4, ((SessionAdvanceFrameAction)actions2[0]).Inputs[3]);
 
             for (int i = 0; i < 20; i++)
             {
@@ -126,33 +128,45 @@ namespace PleaseResyncTest
                 actions2 = session2.AdvanceFrame(new byte[] { 3, 4 }); // send the same inputs as last frame
             }
 
-            var advanceFrameActions1 = actions1.Where(action => action is SessionAdvanceFrameAction).ToArray();
-            var advanceFrameActions2 = actions2.Where(action => action is SessionAdvanceFrameAction).ToArray();
+            Assert.AreEqual(6, actions1.Count); // We should get a rollback for frame1 since we get different inputs, and a normal advance frame for frame2 (session1)
+            Assert.AreEqual(6, actions2.Count); // We should get a rollback for frame1 since we get different inputs, and a normal advance frame for frame2 (session2)
 
-            Assert.AreEqual(3, advanceFrameActions1.Length); // We should get a rollback for frame1 since we get different inputs, and a normal advance frame for frame2 (session1)
-            Assert.AreEqual(3, advanceFrameActions2.Length); // We should get a rollback for frame1 since we get different inputs, and a normal advance frame for frame2 (session2)
-            Assert.IsInstanceOfType(advanceFrameActions1[0], typeof(SessionAdvanceFrameAction));
-            Assert.IsInstanceOfType(advanceFrameActions2[0], typeof(SessionAdvanceFrameAction));
-            Assert.AreEqual((uint)1, ((SessionAdvanceFrameAction)advanceFrameActions1[0]).Frame); // First one should be the rollback for frame1 (session1)
-            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)advanceFrameActions1[0]).Inputs[0]);
-            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)advanceFrameActions1[0]).Inputs[1]);
-            Assert.AreEqual((byte)3, ((SessionAdvanceFrameAction)advanceFrameActions1[0]).Inputs[2]);
-            Assert.AreEqual((byte)4, ((SessionAdvanceFrameAction)advanceFrameActions1[0]).Inputs[3]);
-            Assert.AreEqual((uint)1, ((SessionAdvanceFrameAction)advanceFrameActions2[0]).Frame); // First one should be the rollback for frame1 (session2)
-            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)advanceFrameActions2[0]).Inputs[0]);
-            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)advanceFrameActions2[0]).Inputs[1]);
-            Assert.AreEqual((byte)3, ((SessionAdvanceFrameAction)advanceFrameActions2[0]).Inputs[2]);
-            Assert.AreEqual((byte)4, ((SessionAdvanceFrameAction)advanceFrameActions2[0]).Inputs[3]);
-            Assert.AreEqual((uint)2, ((SessionAdvanceFrameAction)advanceFrameActions1[0]).Frame); // Second one should be the normal advance for frame2 (session1)
-            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)advanceFrameActions1[0]).Inputs[0]);
-            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)advanceFrameActions1[0]).Inputs[1]);
-            Assert.AreEqual((byte)3, ((SessionAdvanceFrameAction)advanceFrameActions1[0]).Inputs[2]);
-            Assert.AreEqual((byte)4, ((SessionAdvanceFrameAction)advanceFrameActions1[0]).Inputs[3]);
-            Assert.AreEqual((uint)2, ((SessionAdvanceFrameAction)advanceFrameActions2[0]).Frame); // Second one should be the normal advance for frame2 (session2)
-            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)advanceFrameActions2[0]).Inputs[0]);
-            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)advanceFrameActions2[0]).Inputs[1]);
-            Assert.AreEqual((byte)3, ((SessionAdvanceFrameAction)advanceFrameActions2[0]).Inputs[2]);
-            Assert.AreEqual((byte)4, ((SessionAdvanceFrameAction)advanceFrameActions2[0]).Inputs[3]);
+            Assert.IsInstanceOfType(actions1[0], typeof(SessionAdvanceFrameAction));
+            Assert.IsInstanceOfType(actions1[1], typeof(SessionSaveGameAction));
+            Assert.IsInstanceOfType(actions1[2], typeof(SessionLoadGameAction));
+            Assert.IsInstanceOfType(actions1[3], typeof(SessionAdvanceFrameAction));
+            Assert.IsInstanceOfType(actions1[4], typeof(SessionAdvanceFrameAction));
+            Assert.IsInstanceOfType(actions1[5], typeof(SessionSaveGameAction));
+
+            Assert.AreEqual((uint)2, ((SessionAdvanceFrameAction)actions1[0]).Frame); // First one should be the normal advance for the current frame (frame2) (session1)
+            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)actions1[0]).Inputs[0]);
+            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)actions1[0]).Inputs[1]);
+            Assert.AreEqual((uint)1, ((SessionLoadGameAction)actions1[2]).Frame); // Then we should go back to frame1 (session1)
+            Assert.AreEqual((uint)1, ((SessionAdvanceFrameAction)actions1[3]).Frame); // And then resimulate frame1 (session1)
+            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)actions1[3]).Inputs[0]);
+            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)actions1[3]).Inputs[1]);
+            Assert.AreEqual((byte)3, ((SessionAdvanceFrameAction)actions1[3]).Inputs[2]);
+            Assert.AreEqual((byte)4, ((SessionAdvanceFrameAction)actions1[3]).Inputs[3]);
+            Assert.AreEqual((uint)2, ((SessionAdvanceFrameAction)actions1[4]).Frame); // And then resimulate frame2 (session1)
+            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)actions1[4]).Inputs[0]);
+            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)actions1[4]).Inputs[1]);
+            Assert.AreEqual((byte)3, ((SessionAdvanceFrameAction)actions1[4]).Inputs[2]);
+            Assert.AreEqual((byte)4, ((SessionAdvanceFrameAction)actions1[4]).Inputs[3]);
+
+            Assert.AreEqual((uint)2, ((SessionAdvanceFrameAction)actions2[0]).Frame); // First one should be the normal advance for the current frame (frame2) (session2)
+            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)actions2[0]).Inputs[0]);
+            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)actions2[0]).Inputs[1]);
+            Assert.AreEqual((uint)1, ((SessionLoadGameAction)actions2[2]).Frame); // Then we should go back to frame1 (session2)
+            Assert.AreEqual((uint)1, ((SessionAdvanceFrameAction)actions2[3]).Frame); // And then resimulate frame1 (session2)
+            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)actions2[3]).Inputs[0]);
+            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)actions2[3]).Inputs[1]);
+            Assert.AreEqual((byte)3, ((SessionAdvanceFrameAction)actions2[3]).Inputs[2]);
+            Assert.AreEqual((byte)4, ((SessionAdvanceFrameAction)actions2[3]).Inputs[3]);
+            Assert.AreEqual((uint)2, ((SessionAdvanceFrameAction)actions2[4]).Frame); // And then resimulate frame2 (session2)
+            Assert.AreEqual((byte)1, ((SessionAdvanceFrameAction)actions2[4]).Inputs[0]);
+            Assert.AreEqual((byte)2, ((SessionAdvanceFrameAction)actions2[4]).Inputs[1]);
+            Assert.AreEqual((byte)3, ((SessionAdvanceFrameAction)actions2[4]).Inputs[2]);
+            Assert.AreEqual((byte)4, ((SessionAdvanceFrameAction)actions2[4]).Inputs[3]);
 
             foreach (var adapter in adapters)
             {
@@ -161,3 +175,4 @@ namespace PleaseResyncTest
         }
     }
 }
+

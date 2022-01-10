@@ -43,7 +43,7 @@ namespace PleaseResync
             // rollback update
             if (_timeSync.ShouldRollback())
             {
-                actions.Add(new SessionLoadGameAction(_stateStorage, _timeSync.SyncFrame));
+                actions.Add(new SessionLoadGameAction(_stateStorage, _timeSync.SyncFrame + 1));
                 for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
                 {
                     var inputs = GetFrameInput(i).Inputs;
@@ -69,6 +69,17 @@ namespace PleaseResync
                         device.SendMessage(new DeviceInputMessage { Frame = (uint)_timeSync.LocalFrame, Input = deviceInput });
                     }
                 }
+            }
+            // rollback update
+            if (_timeSync.ShouldRollback())
+            {
+                actions.Add(new SessionLoadGameAction(_stateStorage, _timeSync.SyncFrame + 1));
+                for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
+                {
+                    var inputs = GetFrameInput(i).Inputs;
+                    actions.Add(new SessionAdvanceFrameAction(inputs, i));
+                }
+                actions.Add(new SessionSaveGameAction(_stateStorage, _timeSync.LocalFrame));
             }
             return actions;
         }
