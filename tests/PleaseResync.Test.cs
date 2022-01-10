@@ -199,6 +199,36 @@ namespace PleaseResyncTest
             Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions2[0]).Inputs[2]); // local input
             Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions2[0]).Inputs[3]); // local input
 
+            // step four: advance to the fourth frame
+            // this time we will send different inputs from session 2 to force a one-sided rollback on session 1
+            actions1 = session1.AdvanceFrame(new byte[] { 1, 2 }); // keep same inputs
+            actions2 = session2.AdvanceFrame(new byte[] { 5, 6 }); // different inputs
+
+            // session1
+            Assert.AreEqual(1, actions1.Count);
+            Assert.IsInstanceOfType(actions1[0], typeof(SessionAdvanceFrameAction));
+            Assert.AreEqual(4, ((SessionSaveGameAction)actions1[0]).Frame);
+            Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions1[0]).Inputs[0]); // local input
+            Assert.AreEqual(2, ((SessionAdvanceFrameAction)actions1[0]).Inputs[1]); // local input
+            Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions1[0]).Inputs[2]); // predicted input (but wrong), should be rolled back on the next frame
+            Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions1[0]).Inputs[3]); // predicted input (but wrong), should be rolled back on the next frame
+            // session2
+            Assert.AreEqual(1, actions2.Count);
+            Assert.IsInstanceOfType(actions2[0], typeof(SessionAdvanceFrameAction));
+            Assert.AreEqual(4, ((SessionSaveGameAction)actions1[0]).Frame);
+            Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions1[0]).Inputs[0]); // predicted input (and right), should NOT be rolled back on the next frame
+            Assert.AreEqual(2, ((SessionAdvanceFrameAction)actions1[0]).Inputs[1]); // predicted input (and right), should NOT be rolled back on the next frame
+            Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions1[0]).Inputs[2]); // local input
+            Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions1[0]).Inputs[3]); // local input
+
+            // step five: advance to the fifth frame
+            // we don't really care about the inputs we send since this is the last test...
+            // ...but we make sure that the one-sided rollback for the fourth frame is correctly applied
+            actions1 = session1.AdvanceFrame(new byte[] { 1, 2 });
+            actions2 = session2.AdvanceFrame(new byte[] { 5, 6 });
+
+            // TODO
+
             foreach (var adapter in adapters)
             {
                 adapter.Close();
