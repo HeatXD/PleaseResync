@@ -126,8 +126,8 @@ namespace PleaseResyncTest
             var advanceFrameActions1 = actions1.Where(action => action is SessionAdvanceFrameAction).ToArray();
             var advanceFrameActions2 = actions2.Where(action => action is SessionAdvanceFrameAction).ToArray();
 
-            Assert.AreEqual(2, advanceFrameActions1.Length); // We should get a rollback for frame1 since we get different inputs, and a normal advance frame for frame2 (session1)
-            Assert.AreEqual(2, advanceFrameActions2.Length); // We should get a rollback for frame1 since we get different inputs, and a normal advance frame for frame2 (session2)
+            Assert.AreEqual(3, advanceFrameActions1.Length); // We should get a rollback for frame1 since we get different inputs, and a normal advance frame for frame2 (session1)
+            Assert.AreEqual(3, advanceFrameActions2.Length); // We should get a rollback for frame1 since we get different inputs, and a normal advance frame for frame2 (session2)
             Assert.IsInstanceOfType(advanceFrameActions1[0], typeof(SessionAdvanceFrameAction));
             Assert.IsInstanceOfType(advanceFrameActions2[0], typeof(SessionAdvanceFrameAction));
             Assert.AreEqual((uint)1, ((SessionAdvanceFrameAction)advanceFrameActions1[0]).Frame); // First one should be the rollback for frame1 (session1)
