@@ -37,9 +37,9 @@ namespace PleaseResync
         {
             Debug.Assert(deviceInput != null);
 
-            UpdateSyncFrame();
-
             bool isTimeSynced = _timeSync.IsTimeSynced(_devices);
+
+            UpdateSyncFrame();
 
             var actions = new List<SessionAction>();
             // rollback update
