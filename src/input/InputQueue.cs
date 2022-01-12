@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace PleaseResync
 {
-    public class InputQueue
+    internal class InputQueue
     {
         public const int QueueSize = 128;
 
@@ -11,10 +11,10 @@ namespace PleaseResync
         private GameInput[] _inputs;
         private Queue<GameInput> _lastPredictedInputs;
 
-        public InputQueue(uint inputSize, uint playerCount)
+        public InputQueue(uint inputSize, uint playerCount, uint frameDelay = 0)
         {
             _inputs = new GameInput[QueueSize];
-            _frameDelay = 0;
+            _frameDelay = (int)frameDelay; // TODO: _frameDelay should be unsigned
             _lastPredictedInputs = new Queue<GameInput>();
 
             for (int i = 0; i < _inputs.Length; i++)
@@ -22,10 +22,12 @@ namespace PleaseResync
                 _inputs[i] = new GameInput(GameInput.NullFrame, inputSize, playerCount);
             }
         }
+
         public Queue<GameInput> GetPredictedInputs()
         {
             return _lastPredictedInputs;
         }
+
         public void AddInput(int frame, GameInput input)
         {
             Debug.Assert(frame >= 0);
@@ -33,11 +35,6 @@ namespace PleaseResync
             frame += _frameDelay;
             _inputs[frame % QueueSize] = new GameInput(input);
             _inputs[frame % QueueSize].Frame = frame;
-        }
-
-        public void SetFrameDelay(uint frameDelay)
-        {
-            _frameDelay = (int)frameDelay;
         }
 
         public GameInput GetInput(int frame)

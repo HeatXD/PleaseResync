@@ -1,6 +1,6 @@
 namespace PleaseResync
 {
-    class TimeSync
+    internal class TimeSync
     {
         public const int InitialFrame = 0;
         public const int MaxRollbackFrames = 7;

@@ -1,18 +1,20 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace PleaseResync
 {
-    public class StateStorage
+    internal class StateStorage
     {
-        private List<byte[]> _states;
-        private int _storageSize;
+        private readonly int _size;
+        private readonly List<byte[]> _states;
+
         public StateStorage(int maxRollbackFrames)
         {
-            _storageSize = maxRollbackFrames + 2; // +2 for extra space for now. might be removed later
-            _states = new List<byte[]>();
-            for (int i = 0; i < _storageSize; i++)
+            _size = maxRollbackFrames + 2; // +2 for extra space for now. might be removed later
+            _states = new List<byte[]>(_size);
+
+            for (int i = 0; i < _size; i++)
             {
                 _states.Add(new byte[1]);
             }
@@ -21,10 +23,10 @@ namespace PleaseResync
         public byte[] LoadFrame(int frame)
         {
             Debug.Assert(frame >= 0);
-            Debug.Assert(_states[frame % _storageSize] != null, "trying to load an empty state!");
+            Debug.Assert(_states[frame % _size] != null, "trying to load an empty state!");
 
-            var tmpState = new byte[_states[frame % _storageSize].Length];
-            Array.Copy(_states[frame % _storageSize], tmpState, _states[frame % _storageSize].Length);
+            var tmpState = new byte[_states[frame % _size].Length];
+            Array.Copy(_states[frame % _size], tmpState, _states[frame % _size].Length);
 
             return tmpState;
         }
@@ -34,8 +36,8 @@ namespace PleaseResync
             Debug.Assert(frame >= 0);
             Debug.Assert(gameState != null, "trying to save an empty gamestate!");
 
-            _states[frame % _storageSize] = new byte[gameState.Length];
-            Array.Copy(gameState, _states[frame % _storageSize], gameState.Length);
+            _states[frame % _size] = new byte[gameState.Length];
+            Array.Copy(gameState, _states[frame % _size], gameState.Length);
         }
     }
 }

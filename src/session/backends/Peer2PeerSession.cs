@@ -9,14 +9,14 @@ namespace PleaseResync
     /// </summary>
     public class Peer2PeerSession : Session
     {
+        internal protected override Device LocalDevice => _localDevice;
+        internal protected override Device[] AllDevices => _allDevices;
+
         private readonly Device[] _allDevices;
         private readonly SessionAdapter _sessionAdapter;
 
         private Sync _sync;
         private Device _localDevice;
-
-        public override Device LocalDevice => _localDevice;
-        public override Device[] AllDevices => _allDevices;
 
         public Peer2PeerSession(uint inputSize, uint deviceCount, uint totalPlayerCount, SessionAdapter adapter) : base(inputSize, deviceCount, totalPlayerCount)
         {
@@ -81,13 +81,13 @@ namespace PleaseResync
             return _sync.AdvanceSync(_localDevice.Id, localInput);
         }
 
-        internal override uint SendMessageTo(uint deviceId, DeviceMessage message)
+        internal protected override uint SendMessageTo(uint deviceId, DeviceMessage message)
         {
             System.Console.WriteLine($"Sending message to remote device {deviceId}: {message}");
             return _sessionAdapter.SendTo(deviceId, message);
         }
 
-        internal override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
+        internal protected override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
         {
             _sync.AddRemoteInput(deviceId, (int)message.Frame, message.Input);
         }

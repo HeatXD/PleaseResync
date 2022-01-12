@@ -25,14 +25,6 @@ namespace PleaseResync
         public const uint LIMIT_TOTAL_PLAYER_COUNT = 16;
 
         /// <summary>
-        /// LocalDevice represents the device that is local to this Session.
-        /// </summary>
-        public abstract Device LocalDevice { get; }
-        /// <summary>
-        /// AllDevices is an array of every devices (local and remotes) taking part in this Session, indexed by their device ID.
-        /// </summary>
-        public abstract Device[] AllDevices { get; }
-        /// <summary>
         /// InputSize is the size in bits of the input for one player.
         /// </summary>
         protected uint InputSize;
@@ -44,6 +36,15 @@ namespace PleaseResync
         /// TotalPlayerCount is the total number of players accross all devices taking part in this session.
         /// </summary>
         protected readonly uint TotalPlayerCount;
+
+        /// <summary>
+        /// LocalDevice represents the device that is local to this Session.
+        /// </summary>
+        internal protected abstract Device LocalDevice { get; }
+        /// <summary>
+        /// AllDevices is an array of every devices (local and remotes) taking part in this Session, indexed by their device ID.
+        /// </summary>
+        internal protected abstract Device[] AllDevices { get; }
 
         /// <param name="inputSize">The size in bits of the input for one player.</param>
         /// <param name="deviceCount">The number of devices taking part in this session.</param>
@@ -93,7 +94,7 @@ namespace PleaseResync
         /// <returns>a list of actions to perform in order before calling AdvanceFrame again</returns>
         public abstract List<SessionAction> AdvanceFrame(byte[] localInput);
 
-        internal abstract uint SendMessageTo(uint deviceId, DeviceMessage message);
-        internal abstract void AddRemoteInput(uint deviceId, DeviceInputMessage message);
+        internal protected abstract uint SendMessageTo(uint deviceId, DeviceMessage message);
+        internal protected abstract void AddRemoteInput(uint deviceId, DeviceInputMessage message);
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PleaseResync
 {
-    public class Sync
+    internal class Sync
     {
         private readonly uint _inputSize;
         private readonly Device[] _devices;
@@ -21,10 +21,23 @@ namespace PleaseResync
             _deviceInputs = new InputQueue[_devices.Length];
         }
 
+        public void AddRemoteInput(uint deviceId, int frame, byte[] deviceInput)
+        {
+            // only allow adding input to the local device
+            Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Remote);
+            // update device variables if needed
+            if (_devices[deviceId].RemoteFrame < frame)
+            {
+                _devices[deviceId].RemoteFrame = frame;
+                _devices[deviceId].RemoteFrameAdvantage = _timeSync.LocalFrame - frame;
+            }
+
+            AddDeviceInput(frame, deviceId, deviceInput);
+        }
+
         public void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)
         {
-            _deviceInputs[deviceId] = new InputQueue(_inputSize, playerCount);
-            _deviceInputs[deviceId].SetFrameDelay(frameDelay);
+            _deviceInputs[deviceId] = new InputQueue(_inputSize, playerCount, frameDelay);
         }
 
         public void AddRemoteDevice(uint deviceId, uint playerCount)
@@ -32,9 +45,9 @@ namespace PleaseResync
             _deviceInputs[deviceId] = new InputQueue(_inputSize, playerCount);
         }
 
-        // should be called after polling the remote devices for their messages.
         public List<SessionAction> AdvanceSync(uint localDeviceId, byte[] deviceInput)
         {
+            // should be called after polling the remote devices for their messages.
             Debug.Assert(deviceInput != null);
 
             bool isTimeSynced = _timeSync.IsTimeSynced(_devices);
@@ -45,12 +58,12 @@ namespace PleaseResync
             // rollback update
             if (_timeSync.ShouldRollback())
             {
-                actions.Add(new SessionLoadGameAction(_stateStorage, _timeSync.SyncFrame));
+                actions.Add(new SessionLoadGameAction(_timeSync.SyncFrame, _stateStorage));
                 for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
                 {
                     var inputs = GetFrameInput(i).Inputs;
-                    actions.Add(new SessionAdvanceFrameAction(inputs, i));
-                    actions.Add(new SessionSaveGameAction(_stateStorage, i));
+                    actions.Add(new SessionAdvanceFrameAction(i, inputs));
+                    actions.Add(new SessionSaveGameAction(i, _stateStorage));
                 }
             }
             // normal update
@@ -60,7 +73,7 @@ namespace PleaseResync
                 // for example if initframe = 0 then 0 will be first save option to rollback to.
                 if (_timeSync.LocalFrame == TimeSync.InitialFrame)
                 {
-                    actions.Add(new SessionSaveGameAction(_stateStorage, _timeSync.LocalFrame));
+                    actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
                 }
 
                 _timeSync.LocalFrame++;
@@ -68,8 +81,8 @@ namespace PleaseResync
                 AddLocalInput(localDeviceId, deviceInput);
                 var inputs = GetFrameInput(_timeSync.LocalFrame).Inputs;
 
-                actions.Add(new SessionAdvanceFrameAction(inputs, _timeSync.LocalFrame));
-                actions.Add(new SessionSaveGameAction(_stateStorage, _timeSync.LocalFrame));
+                actions.Add(new SessionAdvanceFrameAction(_timeSync.LocalFrame, inputs));
+                actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
 
                 foreach (var device in _devices)
                 {
@@ -123,20 +136,6 @@ namespace PleaseResync
             Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Local);
 
             AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
-        }
-
-        public void AddRemoteInput(uint deviceId, int frame, byte[] deviceInput)
-        {
-            // only allow adding input to the local device
-            Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Remote);
-            // update device variables if needed
-            if (_devices[deviceId].RemoteFrame < frame)
-            {
-                _devices[deviceId].RemoteFrame = frame;
-                _devices[deviceId].RemoteFrameAdvantage = _timeSync.LocalFrame - frame;
-            }
-
-            AddDeviceInput(frame, deviceId, deviceInput);
         }
 
         private void AddDeviceInput(int frame, uint deviceId, byte[] deviceInput)

@@ -21,7 +21,7 @@ namespace PleaseResync
     {
         private StateStorage _storage;
 
-        public SessionLoadGameAction(StateStorage storage, int frame)
+        internal SessionLoadGameAction(int frame, StateStorage storage)
         {
             Debug.Assert(frame >= 0);
 
@@ -44,7 +44,7 @@ namespace PleaseResync
     {
         private StateStorage _storage;
 
-        public SessionSaveGameAction(StateStorage storage, int frame)
+        internal SessionSaveGameAction(int frame, StateStorage storage)
         {
             Debug.Assert(frame >= 0);
 
@@ -67,7 +67,7 @@ namespace PleaseResync
     {
         public byte[] Inputs;
 
-        public SessionAdvanceFrameAction(byte[] inputs, int frame)
+        internal SessionAdvanceFrameAction(int frame, byte[] inputs)
         {
             Debug.Assert(inputs != null);
 

@@ -37,20 +37,16 @@ namespace PleaseResync
 
         #region Private
 
+        private const uint NUM_SYNC_ROUNDTRIPS = 5;
+        private const uint SYNC_NEXT_RETRY_INTERVAL = 2000;
+        private const uint SYNC_FIRST_RETRY_INTERVAL = 500;
+
         private readonly Session _session;
 
         private uint _lastSendTime;
         private uint _syncRoundtripsRemaining;
         private ushort _syncRoundtripsRandomRequest;
         private Queue<DeviceMessageQueueEntry> _sendQueue;
-
-        #endregion
-
-        #region Constants
-
-        private const uint NUM_SYNC_ROUNDTRIPS = 5;
-        private const uint SYNC_NEXT_RETRY_INTERVAL = 2000;
-        private const uint SYNC_FIRST_RETRY_INTERVAL = 500;
 
         #endregion
 
@@ -106,14 +102,14 @@ namespace PleaseResync
 
         #region Sending and Receiving messages
 
-        internal void SendMessage(DeviceMessage message)
+        public void SendMessage(DeviceMessage message)
         {
             _lastSendTime = Platform.GetCurrentTimeMS();
             _sendQueue.Enqueue(new DeviceMessageQueueEntry { Time = _lastSendTime, Message = message });
             PumpSendQueue();
         }
 
-        internal void HandleMessage(DeviceMessage message)
+        public void HandleMessage(DeviceMessage message)
         {
             switch (message)
             {
@@ -143,7 +139,7 @@ namespace PleaseResync
             }
         }
 
-        internal void PumpSendQueue()
+        private void PumpSendQueue()
         {
             while (_sendQueue.Count > 0)
             {

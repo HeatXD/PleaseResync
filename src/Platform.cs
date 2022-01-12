@@ -2,7 +2,7 @@ using System;
 
 namespace PleaseResync
 {
-    public static class Platform
+    internal static class Platform
     {
         private readonly static Random RandomNumberGenerator = new Random();
 

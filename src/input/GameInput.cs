@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 namespace PleaseResync
 {
-    public class GameInput
+    internal class GameInput
     {
         public const int NullFrame = -1;
 
