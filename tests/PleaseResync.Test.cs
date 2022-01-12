@@ -272,7 +272,7 @@ namespace PleaseResyncTest
 
             // session1
             Assert.IsInstanceOfType(actions1[0], typeof(SessionLoadGameAction)); // rollback before the first frame
-            Assert.AreEqual(0, ((SessionSaveGameAction)actions1[0]).Frame);
+            Assert.AreEqual(0, ((SessionLoadGameAction)actions1[0]).Frame);
             Assert.IsInstanceOfType(actions1[1], typeof(SessionAdvanceFrameAction)); // resimulate frame 1
             Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions1[1]).Frame);
             Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions1[1]).Inputs[0]); // local input
@@ -286,9 +286,11 @@ namespace PleaseResyncTest
             Assert.AreEqual(2, ((SessionAdvanceFrameAction)actions1[3]).Inputs[1]); // local input
             Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions1[3]).Inputs[2]); // we predict the input for the remote device to be the same as the previous frame
             Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions1[3]).Inputs[3]); // we predict the input for the remote device to be the same as the previous frame
+            Assert.IsInstanceOfType(actions1[4], typeof(SessionSaveGameAction)); // then we save the simulation at frame 1, this simulation maybe incorrect, but we will know later when remote inputs arrive
+            Assert.AreEqual(2, ((SessionSaveGameAction)actions1[4]).Frame);
             // session2
             Assert.IsInstanceOfType(actions2[0], typeof(SessionLoadGameAction)); // rollback before the first frame
-            Assert.AreEqual(0, ((SessionSaveGameAction)actions2[0]).Frame);
+            Assert.AreEqual(0, ((SessionLoadGameAction)actions2[0]).Frame);
             Assert.IsInstanceOfType(actions2[1], typeof(SessionAdvanceFrameAction)); // resimulate frame 1
             Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions2[1]).Frame);
             Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions2[1]).Inputs[0]); // we got the remote inputs now :)
@@ -302,6 +304,8 @@ namespace PleaseResyncTest
             Assert.AreEqual(2, ((SessionAdvanceFrameAction)actions2[3]).Inputs[1]); // we predict the input for the remote device to be the same as the previous frame
             Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions2[3]).Inputs[2]); // local input
             Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions2[3]).Inputs[3]); // local input
+            Assert.IsInstanceOfType(actions2[4], typeof(SessionSaveGameAction)); // then we save the simulation at frame 1, this simulation maybe incorrect, but we will know later when remote inputs arrive
+            Assert.AreEqual(2, ((SessionSaveGameAction)actions2[4]).Frame);
 
             // give a chance to remote inputs to flow from one session to another
             for (var i = 0; i < ITERATIONS; i++)
