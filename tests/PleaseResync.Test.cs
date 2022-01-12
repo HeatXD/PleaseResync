@@ -2,6 +2,8 @@ using System.Linq;
 using MessagePack;
 using PleaseResync;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Collections.Generic;
+using System;
 
 namespace PleaseResyncTest
 {
@@ -131,15 +133,26 @@ namespace PleaseResyncTest
                 }
             }
 
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 50; i++)
             {
                 foreach (var session in sessions)
                 {
                     session.Poll();
                 }
 
-                var sessionActions1 = session1.AdvanceFrame(new byte[] { 1, 2 });
-                var sessionActions2 = session2.AdvanceFrame(new byte[] { 5, 6 });
+                List<SessionAction> sessionActions1;
+                List<SessionAction> sessionActions2;
+
+                if (i < 25)
+                {
+                    sessionActions1 = session1.AdvanceFrame(GetLocalInput());
+                    sessionActions2 = session2.AdvanceFrame(new byte[] { 2, 4 });
+                }
+                else
+                {
+                    sessionActions1 = session1.AdvanceFrame(new byte[] { 2, 4 });
+                    sessionActions2 = session2.AdvanceFrame(GetLocalInput());
+                }
 
                 foreach (var action in sessionActions1)
                 {
@@ -172,28 +185,20 @@ namespace PleaseResyncTest
                             break;
                     }
                 }
-
-                switch (i)
-                {
-                    case 0:
-                        // games shouldnt be the same
-                        Assert.AreNotEqual(sessionState1, sessionState2);
-                        break;
-                    case 1:
-                        // games should be the same after rollback
-                        Assert.AreEqual(sessionState1, sessionState2);
-                        break;
-                    case 2:
-                        // games should still be the same after rollback
-                        Assert.AreEqual(sessionState1, sessionState2);
-                        break;
-                }
             }
 
             foreach (var adapter in adapters)
             {
                 adapter.Close();
             }
+        }
+
+        private byte[] GetLocalInput()
+        {
+            Random rnd = new Random();
+            byte[] b = new byte[2];
+            rnd.NextBytes(b);
+            return b;
         }
 
         [TestMethod]
@@ -259,7 +264,6 @@ namespace PleaseResyncTest
                 foreach (var session in sessions)
                 {
                     session.Poll();
-
                 }
                 System.Threading.Thread.Sleep(100);
             }
@@ -313,7 +317,6 @@ namespace PleaseResyncTest
                 foreach (var session in sessions)
                 {
                     session.Poll();
-
                 }
                 System.Threading.Thread.Sleep(100);
             }
@@ -342,6 +345,16 @@ namespace PleaseResyncTest
             Assert.IsInstanceOfType(actions2[1], typeof(SessionSaveGameAction));
             Assert.AreEqual(3, ((SessionSaveGameAction)actions2[1]).Frame);
 
+            // give a chance to remote inputs to flow from one session to another
+            for (var i = 0; i < ITERATIONS; i++)
+            {
+                foreach (var session in sessions)
+                {
+                    session.Poll();
+                }
+                System.Threading.Thread.Sleep(100);
+            }
+
             // step four: advance to the fourth frame
             // this time we will send different inputs from session 2 to force a one-sided rollback on session 1
             actions1 = session1.AdvanceFrame(new byte[] { 1, 2 }); // keep same inputs
@@ -366,6 +379,15 @@ namespace PleaseResyncTest
             Assert.IsInstanceOfType(actions2[1], typeof(SessionSaveGameAction)); // then we save the simulation at frame 4, this simulation maybe incorrect, but we will know later when remote inputs arrive
             Assert.AreEqual(4, ((SessionSaveGameAction)actions2[1]).Frame);
 
+            // give a chance to remote inputs to flow from one session to another
+            for (var i = 0; i < ITERATIONS; i++)
+            {
+                foreach (var session in sessions)
+                {
+                    session.Poll();
+                }
+                System.Threading.Thread.Sleep(100);
+            }
             // step five: advance to the fifth frame
             // we don't really care about the inputs we send since this is the last test...
             // ...but we make sure that the one-sided rollback for the fourth frame is correctly applied
