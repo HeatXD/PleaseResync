@@ -82,17 +82,17 @@ namespace PleaseResync
 
         #region Remote Configuration
 
-        public static IPEndPoint CreateRemoteConfiguration(IPEndPoint endpoint)
+        public static IPEndPoint CreateRemoteConfig(IPEndPoint endpoint)
         {
             return endpoint;
         }
 
-        public static IPEndPoint CreateRemoteConfiguration(string remoteAddress, ushort remotePort)
+        public static IPEndPoint CreateRemoteConfig(string remoteAddress, ushort remotePort)
         {
             return new IPEndPoint(IPAddress.Parse(remoteAddress), remotePort);
         }
 
-        public static IPEndPoint CreateRemoteConfiguration(IPAddress remoteAddress, ushort remotePort)
+        public static IPEndPoint CreateRemoteConfig(IPAddress remoteAddress, ushort remotePort)
         {
             return new IPEndPoint(remoteAddress, remotePort);
         }

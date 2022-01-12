@@ -35,16 +35,16 @@ namespace PleaseResyncTest
             var sessions = new Peer2PeerSession[] { session1, session2, session3 };
 
             session1.SetLocalDevice(device1, 1, FRAME_DELAY);
-            session1.AddRemoteDevice(device2, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_2));
-            session1.AddRemoteDevice(device3, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_3));
+            session1.AddRemoteDevice(device2, 1, UdpSessionAdapter.CreateRemoteConfig(LOCAL_ADDRESS, LOCAL_PORT_2));
+            session1.AddRemoteDevice(device3, 1, UdpSessionAdapter.CreateRemoteConfig(LOCAL_ADDRESS, LOCAL_PORT_3));
 
             session2.SetLocalDevice(device2, 1, FRAME_DELAY);
-            session2.AddRemoteDevice(device1, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_1));
-            session2.AddRemoteDevice(device3, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_3));
+            session2.AddRemoteDevice(device1, 1, UdpSessionAdapter.CreateRemoteConfig(LOCAL_ADDRESS, LOCAL_PORT_1));
+            session2.AddRemoteDevice(device3, 1, UdpSessionAdapter.CreateRemoteConfig(LOCAL_ADDRESS, LOCAL_PORT_3));
 
             session3.SetLocalDevice(device3, 1, FRAME_DELAY);
-            session3.AddRemoteDevice(device1, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_1));
-            session3.AddRemoteDevice(device2, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_2));
+            session3.AddRemoteDevice(device1, 1, UdpSessionAdapter.CreateRemoteConfig(LOCAL_ADDRESS, LOCAL_PORT_1));
+            session3.AddRemoteDevice(device2, 1, UdpSessionAdapter.CreateRemoteConfig(LOCAL_ADDRESS, LOCAL_PORT_2));
 
             while (!sessions.All(session => session.IsRunning()))
             {
@@ -118,10 +118,10 @@ namespace PleaseResyncTest
             var sessions = new Peer2PeerSession[] { session1, session2 };
 
             session1.SetLocalDevice(device1, 1, FRAME_DELAY);
-            session1.AddRemoteDevice(device2, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_2));
+            session1.AddRemoteDevice(device2, 1, UdpSessionAdapter.CreateRemoteConfig(LOCAL_ADDRESS, LOCAL_PORT_2));
 
             session2.SetLocalDevice(device2, 1, FRAME_DELAY);
-            session2.AddRemoteDevice(device1, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_1));
+            session2.AddRemoteDevice(device1, 1, UdpSessionAdapter.CreateRemoteConfig(LOCAL_ADDRESS, LOCAL_PORT_1));
 
             while (!sessions.All(session => session.IsRunning()))
             {
@@ -131,7 +131,7 @@ namespace PleaseResyncTest
                 }
             }
 
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 10; i++)
             {
                 foreach (var session in sessions)
                 {
@@ -212,10 +212,10 @@ namespace PleaseResyncTest
             var sessions = new Peer2PeerSession[] { session1, session2 };
 
             session1.SetLocalDevice(device1, 1, FRAME_DELAY);
-            session1.AddRemoteDevice(device2, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_2));
+            session1.AddRemoteDevice(device2, 1, UdpSessionAdapter.CreateRemoteConfig(LOCAL_ADDRESS, LOCAL_PORT_2));
 
             session2.SetLocalDevice(device2, 1, FRAME_DELAY);
-            session2.AddRemoteDevice(device1, 1, UdpSessionAdapter.CreateRemoteConfiguration(LOCAL_ADDRESS, LOCAL_PORT_1));
+            session2.AddRemoteDevice(device1, 1, UdpSessionAdapter.CreateRemoteConfig(LOCAL_ADDRESS, LOCAL_PORT_1));
 
             while (!sessions.All(session => session.IsRunning()))
             {
