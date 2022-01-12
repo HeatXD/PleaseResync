@@ -320,7 +320,6 @@ namespace PleaseResyncTest
             actions2 = session2.AdvanceFrame(new byte[] { 3, 4 });
 
             // session1
-            Assert.AreEqual(1, actions1.Count);
             Assert.IsInstanceOfType(actions1[0], typeof(SessionAdvanceFrameAction));
             Assert.AreEqual(3, ((SessionSaveGameAction)actions1[0]).Frame);
             Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions1[0]).Inputs[0]); // local input
@@ -328,7 +327,6 @@ namespace PleaseResyncTest
             Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions1[0]).Inputs[2]); // predicted input
             Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions1[0]).Inputs[3]); // predicted input
             // session2
-            Assert.AreEqual(1, actions2.Count);
             Assert.IsInstanceOfType(actions2[0], typeof(SessionAdvanceFrameAction));
             Assert.AreEqual(3, ((SessionSaveGameAction)actions2[0]).Frame);
             Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions2[0]).Inputs[0]); // predicted input
@@ -342,15 +340,13 @@ namespace PleaseResyncTest
             actions2 = session2.AdvanceFrame(new byte[] { 5, 6 }); // different inputs
 
             // session1
-            Assert.AreEqual(1, actions1.Count);
             Assert.IsInstanceOfType(actions1[0], typeof(SessionAdvanceFrameAction));
             Assert.AreEqual(4, ((SessionSaveGameAction)actions1[0]).Frame);
             Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions1[0]).Inputs[0]); // local input
             Assert.AreEqual(2, ((SessionAdvanceFrameAction)actions1[0]).Inputs[1]); // local input
             Assert.AreEqual(3, ((SessionAdvanceFrameAction)actions1[0]).Inputs[2]); // predicted input (but wrong), should be rolled back on the next frame
             Assert.AreEqual(4, ((SessionAdvanceFrameAction)actions1[0]).Inputs[3]); // predicted input (but wrong), should be rolled back on the next frame
-                                                                                    // session2
-            Assert.AreEqual(1, actions2.Count);
+            // session2
             Assert.IsInstanceOfType(actions2[0], typeof(SessionAdvanceFrameAction));
             Assert.AreEqual(4, ((SessionSaveGameAction)actions1[0]).Frame);
             Assert.AreEqual(1, ((SessionAdvanceFrameAction)actions1[0]).Inputs[0]); // predicted input (and right), should NOT be rolled back on the next frame
