@@ -179,11 +179,11 @@ namespace PleaseResyncTest
                         Assert.AreNotEqual(sessionState1, sessionState2);
                         break;
                     case 1:
-                        // games shouldnt be the same
-                        Assert.AreNotEqual(sessionState1, sessionState2);
+                        // games should be the same after rollback
+                        Assert.AreEqual(sessionState1, sessionState2);
                         break;
                     case 2:
-                        // games should be the same after rollback
+                        // games should still be the same after rollback
                         Assert.AreEqual(sessionState1, sessionState2);
                         break;
                 }

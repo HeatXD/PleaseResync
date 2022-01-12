@@ -39,6 +39,8 @@ namespace PleaseResync
 
             UpdateSyncFrame();
 
+            bool isTimeSynced = _timeSync.IsTimeSynced(_devices);
+
             var actions = new List<SessionAction>();
             // rollback update
             if (_timeSync.ShouldRollback())
@@ -52,7 +54,7 @@ namespace PleaseResync
                 }
             }
             // normal update
-            if (_timeSync.IsTimeSynced(_devices))
+            if (isTimeSynced)
             {
                 // create savestate at the initialFrame to support rolling back to it
                 // for example if initframe = 0 then 0 will be first save option to rollback to.
