@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 
 namespace PleaseResync
 {
@@ -14,6 +15,14 @@ namespace PleaseResync
         public static ushort GetRandomUnsignedShort()
         {
             return (ushort)RandomNumberGenerator.Next();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] CloneByteArray(byte[] array)
+        {
+            var newArray = new byte[array.Length];
+            Array.Copy(array, 0, newArray, 0, array.Length);
+            return newArray;
         }
     }
 }

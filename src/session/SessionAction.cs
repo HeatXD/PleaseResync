@@ -19,7 +19,7 @@ namespace PleaseResync
     /// </summary>
     public class SessionLoadGameAction : SessionAction
     {
-        private StateStorage _storage;
+        private readonly StateStorage _storage;
 
         internal SessionLoadGameAction(int frame, StateStorage storage)
         {
@@ -31,7 +31,7 @@ namespace PleaseResync
 
         public byte[] Load()
         {
-            return _storage.LoadFrame(Frame);
+            return _storage.LoadFrame(Frame).Buffer;
         }
 
         public override string ToString() { return $"{typeof(SessionLoadGameAction)}: {new { Frame, _storage }}"; }
@@ -42,7 +42,7 @@ namespace PleaseResync
     /// </summary>
     public class SessionSaveGameAction : SessionAction
     {
-        private StateStorage _storage;
+        private readonly StateStorage _storage;
 
         internal SessionSaveGameAction(int frame, StateStorage storage)
         {
@@ -52,9 +52,9 @@ namespace PleaseResync
             _storage = storage;
         }
 
-        public void Save(byte[] gameState)
+        public void Save(byte[] stateBuffer, uint checksum = 0)
         {
-            _storage.SaveToFrame(Frame, gameState);
+            _storage.SaveFrame(Frame, stateBuffer, checksum);
         }
 
         public override string ToString() { return $"{typeof(SessionSaveGameAction)}: {new { Frame, _storage }}"; }

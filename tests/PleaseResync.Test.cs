@@ -1,9 +1,9 @@
+using System;
 using System.Linq;
 using MessagePack;
 using PleaseResync;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
-using System;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace PleaseResyncTest
 {
