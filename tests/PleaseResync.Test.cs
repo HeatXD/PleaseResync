@@ -143,15 +143,15 @@ namespace PleaseResyncTest
                 List<SessionAction> sessionActions1;
                 List<SessionAction> sessionActions2;
 
-                if (i < 25)
+                if (i < 10)
                 {
                     sessionActions1 = session1.AdvanceFrame(GetLocalInput());
-                    sessionActions2 = session2.AdvanceFrame(new byte[] { 2, 4 });
+                    sessionActions2 = session2.AdvanceFrame(GetLocalInput());
                 }
                 else
                 {
                     sessionActions1 = session1.AdvanceFrame(new byte[] { 2, 4 });
-                    sessionActions2 = session2.AdvanceFrame(GetLocalInput());
+                    sessionActions2 = session2.AdvanceFrame(new byte[] { 21, 5 });
                 }
 
                 foreach (var action in sessionActions1)

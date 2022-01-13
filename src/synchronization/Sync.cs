@@ -102,30 +102,26 @@ namespace PleaseResync
             {
                 finalFrame = _timeSync.LocalFrame;
             }
+            bool foundMistake = false;
             int foundFrame = finalFrame;
             for (int i = _timeSync.SyncFrame + 1; i <= finalFrame; i++)
             {
                 foreach (var input in _deviceInputs)
                 {
-                    if (input.GetPredictedInputs().Count > 0)
+                    var predInputs = input.GetPredictedInputs();
+                    if (predInputs.Count > 0 && predInputs.Peek().Frame == i)
                     {
-                        // frame was predicted and wrong.
-                        if (!input.GetPredictedInputs().Peek().Equal(input.GetInput(i), true) &&
-                            input.GetPredictedInputs().Peek().Frame == i)
+                        // Incorrect Prediction
+                        if (!predInputs.Peek().Equal(input.GetInput(i, false), false))
                         {
-                            // set found frame
                             foundFrame = i - 1;
-                            // remove the wrongly predicted input from the queue
-                            input.GetPredictedInputs().Dequeue();
-                            break;
+                            foundMistake = true;
                         }
-                        else if (input.GetPredictedInputs().Peek().Equal(input.GetInput(i), false))
-                        {
-                            // right prediction! remove from the prediction queue
-                            input.GetPredictedInputs().Dequeue();
-                        }
+                        // remove prediction form queue
+                        predInputs.Dequeue();
                     }
                 }
+                if (foundMistake) break;
             }
             _timeSync.SyncFrame = foundFrame;
         }

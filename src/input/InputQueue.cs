@@ -37,23 +37,27 @@ namespace PleaseResync
             _inputs[frame % QueueSize].Frame = frame;
         }
 
-        public GameInput GetInput(int frame)
+        public GameInput GetInput(int frame, bool predict = true)
         {
             Debug.Assert(frame >= 0);
 
             int frameOffset = frame % QueueSize;
-            // if the frame is a NullFrame or the frames dont match predict the next frame based off the previous frame.
-            if (_inputs[frameOffset].Frame == GameInput.NullFrame ||
-                _inputs[frameOffset].Frame != frame)
+            // predict if needed
+            if (predict)
             {
-                // predict current frame based off previous frame.
-                var prevFrame = _inputs[PreviousFrame(frameOffset)];
-                _inputs[frameOffset] = new GameInput(prevFrame);
-                _inputs[frameOffset].Frame = GameInput.NullFrame;
-                // add predicted frame to the queue. when later is proved that the input was right it will be removed.
-                var predicted = new GameInput(_inputs[frameOffset]);
-                predicted.Frame = frame;
-                _lastPredictedInputs.Enqueue(new GameInput(predicted));
+                // if the frame is a NullFrame or the frames dont match predict the next frame based off the previous frame.
+                if (_inputs[frameOffset].Frame == GameInput.NullFrame ||
+                    _inputs[frameOffset].Frame != frame)
+                {
+                    // predict current frame based off previous frame.
+                    var prevFrame = _inputs[PreviousFrame(frameOffset)];
+                    _inputs[frameOffset] = new GameInput(prevFrame);
+                    _inputs[frameOffset].Frame = GameInput.NullFrame;
+                    // add predicted frame to the queue. when later is proved that the input was right it will be removed.
+                    var predicted = new GameInput(_inputs[frameOffset]);
+                    predicted.Frame = frame;
+                    _lastPredictedInputs.Enqueue(new GameInput(predicted));
+                }
             }
             return new GameInput(_inputs[frameOffset]);
         }
