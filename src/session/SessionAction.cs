@@ -1,4 +1,3 @@
-using System;
 using System.Diagnostics;
 
 namespace PleaseResync
@@ -72,8 +71,7 @@ namespace PleaseResync
             Debug.Assert(inputs != null);
 
             Frame = frame;
-            Inputs = new byte[inputs.Length];
-            Array.Copy(inputs, Inputs, inputs.Length);
+            Inputs = Platform.CloneByteArray(inputs);
         }
 
         public override string ToString() { return $"{typeof(SessionAdvanceFrameAction)}: {new { Frame, Inputs }}"; }
