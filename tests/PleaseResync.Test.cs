@@ -10,7 +10,6 @@ namespace PleaseResyncTest
     [TestClass]
     public class PleaseResyncTest_Peer2PeerSession
     {
-        private const uint ITERATIONS = 3;
         private const uint INPUT_SIZE = 2;
         private const ushort FRAME_DELAY = 0;
         private const ushort LOCAL_PORT_1 = 7001;
@@ -64,49 +63,12 @@ namespace PleaseResyncTest
             }
         }
 
-        [MessagePackObject]
-        public class TestState
-        {
-            [Key(0)]
-            public uint frame;
-            [Key(1)]
-            public uint sum;
-
-            public TestState(uint frame, uint sum)
-            {
-                this.frame = frame;
-                this.sum = sum;
-            }
-
-            public void Update(byte[] playerInput)
-            {
-                frame++;
-
-                foreach (var num in playerInput)
-                {
-                    sum += num;
-                }
-            }
-
-            public override bool Equals(object obj)
-            {
-                return obj is TestState state &&
-                       frame == state.frame &&
-                       sum == state.sum;
-            }
-
-            public override int GetHashCode()
-            {
-                return System.HashCode.Combine(frame, sum);
-            }
-        }
-
         [TestMethod]
         [TimeoutAttribute(5000)]
         public void Test_RollbackSequence()
         {
-            var sessionState1 = new TestState(0, 0);
-            var sessionState2 = new TestState(0, 0);
+            var sessionState1 = new TestHelpers.TestState(0, 0);
+            var sessionState2 = new TestHelpers.TestState(0, 0);
 
             uint device1 = 0;
             uint device2 = 1;
@@ -145,8 +107,8 @@ namespace PleaseResyncTest
 
                 if (i < 10)
                 {
-                    sessionActions1 = session1.AdvanceFrame(GetLocalInput());
-                    sessionActions2 = session2.AdvanceFrame(GetLocalInput());
+                    sessionActions1 = session1.AdvanceFrame(TestHelpers.GetLocalInput());
+                    sessionActions2 = session2.AdvanceFrame(TestHelpers.GetLocalInput());
                 }
                 else
                 {
@@ -162,7 +124,7 @@ namespace PleaseResyncTest
                             sessionState1.Update(AFAction.Inputs);
                             break;
                         case SessionLoadGameAction LGAction:
-                            sessionState1 = MessagePackSerializer.Deserialize<TestState>(LGAction.Load());
+                            sessionState1 = MessagePackSerializer.Deserialize<TestHelpers.TestState>(LGAction.Load());
                             break;
                         case SessionSaveGameAction SGAction:
                             SGAction.Save(MessagePackSerializer.Serialize(sessionState1));
@@ -178,7 +140,7 @@ namespace PleaseResyncTest
                             sessionState2.Update(AFAction.Inputs);
                             break;
                         case SessionLoadGameAction LGAction:
-                            sessionState2 = MessagePackSerializer.Deserialize<TestState>(LGAction.Load());
+                            sessionState2 = MessagePackSerializer.Deserialize<TestHelpers.TestState>(LGAction.Load());
                             break;
                         case SessionSaveGameAction SGAction:
                             SGAction.Save(MessagePackSerializer.Serialize(sessionState2));
@@ -193,17 +155,9 @@ namespace PleaseResyncTest
             }
         }
 
-        private byte[] GetLocalInput()
-        {
-            Random rnd = new Random();
-            byte[] b = new byte[2];
-            rnd.NextBytes(b);
-            return b;
-        }
-
         [TestMethod]
         [TimeoutAttribute(5000)]
-        public void Test_SyncInputAcrossDevices()
+        public void Test_SyncInputAcrossDevices_StepByStep()
         {
             uint device1 = 0;
             uint device2 = 1;
@@ -259,14 +213,7 @@ namespace PleaseResyncTest
             Assert.AreEqual(1, ((SessionSaveGameAction)actions1[2]).Frame);
 
             // give a chance to remote inputs to flow from one session to another
-            for (var i = 0; i < ITERATIONS; i++)
-            {
-                foreach (var session in sessions)
-                {
-                    session.Poll();
-                }
-                System.Threading.Thread.Sleep(100);
-            }
+            TestHelpers.PollSessions(sessions);
 
             // step two: advance to the second frame
             // since remote inputs should be arrived now, the simulation for the first frame for both sessions were done with incomplete inputs...
@@ -312,14 +259,7 @@ namespace PleaseResyncTest
             Assert.AreEqual(2, ((SessionSaveGameAction)actions2[4]).Frame);
 
             // give a chance to remote inputs to flow from one session to another
-            for (var i = 0; i < ITERATIONS; i++)
-            {
-                foreach (var session in sessions)
-                {
-                    session.Poll();
-                }
-                System.Threading.Thread.Sleep(100);
-            }
+            TestHelpers.PollSessions(sessions);
 
             // step three: advance to the third frame
             // we are sending the same inputs as frame 2 and there should be no rollbacks since the same inputs should be predicted
@@ -346,14 +286,7 @@ namespace PleaseResyncTest
             Assert.AreEqual(3, ((SessionSaveGameAction)actions2[1]).Frame);
 
             // give a chance to remote inputs to flow from one session to another
-            for (var i = 0; i < ITERATIONS; i++)
-            {
-                foreach (var session in sessions)
-                {
-                    session.Poll();
-                }
-                System.Threading.Thread.Sleep(100);
-            }
+            TestHelpers.PollSessions(sessions);
 
             // step four: advance to the fourth frame
             // this time we will send different inputs from session 2 to force a one-sided rollback on session 1
@@ -380,14 +313,7 @@ namespace PleaseResyncTest
             Assert.AreEqual(4, ((SessionSaveGameAction)actions2[1]).Frame);
 
             // give a chance to remote inputs to flow from one session to another
-            for (var i = 0; i < ITERATIONS; i++)
-            {
-                foreach (var session in sessions)
-                {
-                    session.Poll();
-                }
-                System.Threading.Thread.Sleep(100);
-            }
+            TestHelpers.PollSessions(sessions);
 
             // step five: advance to the fifth frame
             // we are sending the same inputs as frame 4 and there should be no rollbacks since the same inputs should be predicted
@@ -424,15 +350,7 @@ namespace PleaseResyncTest
             Assert.AreEqual(5, ((SessionSaveGameAction)actions2[1]).Frame);
 
             // give a chance to remote inputs to flow from one session to another
-            for (var i = 0; i < ITERATIONS; i++)
-            {
-                foreach (var session in sessions)
-                {
-                    session.Poll();
-
-                }
-                System.Threading.Thread.Sleep(100);
-            }
+            TestHelpers.PollSessions(sessions);
 
             // step six: advance to the sixth frame
             // we don't really care about the inputs we send since this is the last test...
@@ -462,6 +380,164 @@ namespace PleaseResyncTest
             foreach (var adapter in adapters)
             {
                 adapter.Close();
+            }
+        }
+
+        [TestMethod]
+        [TimeoutAttribute(5000)]
+        public void Test_SyncInputAcrossDevices_InputsOverview()
+        {
+            uint device1 = 0;
+            uint device2 = 1;
+
+            var adapter1 = new UdpSessionAdapter(LOCAL_PORT_1);
+            var adapter2 = new UdpSessionAdapter(LOCAL_PORT_2);
+            var adapters = new UdpSessionAdapter[] { adapter1, adapter2 };
+
+            var session1 = new Peer2PeerSession(INPUT_SIZE, 2, 2, adapter1);
+            var session2 = new Peer2PeerSession(INPUT_SIZE, 2, 2, adapter2);
+            var sessions = new Peer2PeerSession[] { session1, session2 };
+
+            session1.SetLocalDevice(device1, 1, FRAME_DELAY);
+            session1.AddRemoteDevice(device2, 1, UdpSessionAdapter.CreateRemoteConfig(LOCAL_ADDRESS, LOCAL_PORT_2));
+
+            session2.SetLocalDevice(device2, 1, FRAME_DELAY);
+            session2.AddRemoteDevice(device1, 1, UdpSessionAdapter.CreateRemoteConfig(LOCAL_ADDRESS, LOCAL_PORT_1));
+
+            while (!sessions.All(session => session.IsRunning()))
+            {
+                foreach (var session in sessions)
+                {
+                    session.Poll();
+                }
+            }
+
+            var inputs1 = new byte[INPUT_SIZE * /* device count */ 2 * /* # of advance frames */ 12];
+            var inputs2 = new byte[INPUT_SIZE * /* device count */ 2 * /* # of advance frames */ 12];
+            Action<byte[], List<SessionAction>> accumulateInputs = (inputs, actions) =>
+            {
+                foreach (var action in actions)
+                {
+                    if (action is SessionAdvanceFrameAction sessionAdvanceFrameAction)
+                    {
+                        // flatten inputs to facilitate testing with CollectionAssert.AreEqual
+                        Array.Copy(sessionAdvanceFrameAction.Inputs, 0, inputs, (sessionAdvanceFrameAction.Frame - 1) * INPUT_SIZE * /* device count */ 2, INPUT_SIZE * /* device count */ 2);
+                    }
+                }
+            };
+
+            accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 1, 2 }));
+            accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 1, 2 }));
+
+            // give a chance to remote inputs to flow from one session to another
+            TestHelpers.PollSessions(sessions);
+
+            accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 3, 4 }));
+            accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 3, 4 }));
+
+            // give a chance to remote inputs to flow from one session to another
+            TestHelpers.PollSessions(sessions);
+
+            accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 5, 6 }));
+            accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 5, 6 }));
+
+            // give a chance to remote inputs to flow from one session to another
+            TestHelpers.PollSessions(sessions);
+
+            accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 7, 8 }));
+            accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 7, 8 }));
+
+            // give a chance to remote inputs to flow from one session to another
+            TestHelpers.PollSessions(sessions);
+
+            accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 9, 10 }));
+            accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 9, 10 }));
+
+            // give a chance to remote inputs to flow from one session to another
+            TestHelpers.PollSessions(sessions);
+
+            accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 11, 12 }));
+            accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 11, 12 }));
+
+            CollectionAssert.AreEqual(inputs1.Skip(0).Take((int)(/* steps */ 5 * (INPUT_SIZE * /* device count */ 2))).ToArray(), new byte[] {
+                1, 2, 1, 2,
+                3, 4, 3, 4,
+                5, 6, 5, 6,
+                7, 8, 7, 8,
+                9, 10, 9, 10
+            });
+            CollectionAssert.AreEqual(inputs2.Skip(0).Take((int)(/* steps */ 5 * (INPUT_SIZE * /* device count */ 2))).ToArray(), new byte[] {
+                1, 2, 1, 2,
+                3, 4, 3, 4,
+                5, 6, 5, 6,
+                7, 8, 7, 8,
+                9, 10, 9, 10
+            });
+
+            // TODO: add more tests with different Poll frequencies and different inputs all over the place
+        }
+    }
+
+    public static class TestHelpers
+    {
+        private const uint ITERATIONS = 3;
+
+        [MessagePackObject]
+        public class TestState
+        {
+            [Key(0)]
+            public uint frame;
+            [Key(1)]
+            public uint sum;
+
+            public TestState(uint frame, uint sum)
+            {
+                this.frame = frame;
+                this.sum = sum;
+            }
+
+            public void Update(byte[] playerInput)
+            {
+                frame++;
+
+                foreach (var num in playerInput)
+                {
+                    sum += num;
+                }
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is TestState state &&
+                       frame == state.frame &&
+                       sum == state.sum;
+            }
+
+            public override int GetHashCode()
+            {
+                return System.HashCode.Combine(frame, sum);
+            }
+        }
+
+        public static byte[] GetLocalInput()
+        {
+            Random rnd = new Random();
+            byte[] b = new byte[2];
+            rnd.NextBytes(b);
+            return b;
+        }
+
+        public static void PollSessions(Session[] sessions)
+        {
+            // give a chance to remote inputs to flow from one session to another
+            for (var i = 0; i < ITERATIONS; i++)
+            {
+                foreach (var session in sessions)
+                {
+                    session.Poll();
+                }
+
+                System.Threading.Thread.Sleep(100);
             }
         }
     }
