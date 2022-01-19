@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Collections.Generic;
+using System;
 
 namespace PleaseResync
 {
@@ -31,6 +32,8 @@ namespace PleaseResync
 
         public int RemoteFrame;
         public int RemoteFrameAdvantage;
+        public uint LastAckedInputFrame;
+
         public DeviceState State;
 
         #endregion
@@ -136,6 +139,17 @@ namespace PleaseResync
                 case DeviceInputMessage inputMessage:
                     _session.AddRemoteInput(Id, inputMessage);
                     break;
+                case DeviceInputAckMessage inputAckMessage:
+                    UpdateAckedInputFrame(inputAckMessage);
+                    break;
+            }
+        }
+
+        private void UpdateAckedInputFrame(DeviceInputAckMessage inputAckMessage)
+        {
+            if (LastAckedInputFrame < inputAckMessage.Frame)
+            {
+                LastAckedInputFrame = inputAckMessage.Frame;
             }
         }
 

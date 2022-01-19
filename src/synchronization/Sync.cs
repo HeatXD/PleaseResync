@@ -33,6 +33,7 @@ namespace PleaseResync
             }
 
             AddDeviceInput(frame, deviceId, deviceInput);
+            _devices[deviceId].SendMessage(new DeviceInputAckMessage { Frame = (uint)frame });
         }
 
         public void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)

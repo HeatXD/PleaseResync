@@ -5,6 +5,7 @@ namespace PleaseResync
     [Union(0, typeof(DeviceSyncMessage))]
     [Union(1, typeof(DeviceSyncConfirmMessage))]
     [Union(2, typeof(DeviceInputMessage))]
+    [Union(3, typeof(DeviceInputAckMessage))]
     [MessagePackObject]
     public abstract class DeviceMessage
     {
@@ -47,5 +48,14 @@ namespace PleaseResync
         public byte[] Input;
 
         public override string ToString() { return $"{typeof(DeviceInputMessage)}: {new { Frame, Input }}"; }
+    }
+
+    [MessagePackObject]
+    public class DeviceInputAckMessage : DeviceMessage
+    {
+        [Key(1)]
+        public uint Frame;
+
+        public override string ToString() { return $"{typeof(DeviceInputAckMessage)}: {new { Frame }}"; }
     }
 }
