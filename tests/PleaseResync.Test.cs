@@ -412,19 +412,25 @@ namespace PleaseResyncTest
                 }
             }
 
-            var inputs1 = new byte[INPUT_SIZE * /* device count */ 2 * /* # of advance frames */ 12];
-            var inputs2 = new byte[INPUT_SIZE * /* device count */ 2 * /* # of advance frames */ 12];
+            var inputs1 = new byte[INPUT_SIZE * /* device count */ 2 * /* # of advance frames */ 20];
+            var inputs2 = new byte[INPUT_SIZE * /* device count */ 2 * /* # of advance frames */ 20];
             Action<byte[], List<SessionAction>> accumulateInputs = (inputs, actions) =>
             {
                 foreach (var action in actions)
                 {
                     if (action is SessionAdvanceFrameAction sessionAdvanceFrameAction)
                     {
-                        // flatten inputs to facilitate testing with CollectionAssert.AreEqual
+                        // flatten inputs to facilitate testing with TestHelpers.AssertByteArrayEquals
                         Array.Copy(sessionAdvanceFrameAction.Inputs, 0, inputs, (sessionAdvanceFrameAction.Frame - 1) * INPUT_SIZE * /* device count */ 2, INPUT_SIZE * /* device count */ 2);
                     }
                 }
             };
+
+            accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 0, 0 }));
+            accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 0, 0 }));
+
+            // give a chance to remote inputs to flow from one session to another
+            TestHelpers.PollSessions(sessions);
 
             accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 1, 2 }));
             accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 1, 2 }));
@@ -456,25 +462,53 @@ namespace PleaseResyncTest
             // give a chance to remote inputs to flow from one session to another
             TestHelpers.PollSessions(sessions);
 
-            accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 11, 12 }));
-            accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 11, 12 }));
+            accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 0, 0 }));
+            accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 0, 0 }));
 
-            CollectionAssert.AreEqual(inputs1.Skip(0).Take((int)(/* steps */ 5 * (INPUT_SIZE * /* device count */ 2))).ToArray(), new byte[] {
+            TestHelpers.AssertByteArrayEquals(new byte[] {
+                0, 0, 0, 0,
                 1, 2, 1, 2,
                 3, 4, 3, 4,
                 5, 6, 5, 6,
                 7, 8, 7, 8,
                 9, 10, 9, 10
-            });
-            CollectionAssert.AreEqual(inputs2.Skip(0).Take((int)(/* steps */ 5 * (INPUT_SIZE * /* device count */ 2))).ToArray(), new byte[] {
+            }, inputs1.Skip(0).Take((int)(/* steps */ 6 * (INPUT_SIZE * /* device count */ 2))).ToArray());
+            TestHelpers.AssertByteArrayEquals(new byte[] {
+                0, 0, 0, 0,
                 1, 2, 1, 2,
                 3, 4, 3, 4,
                 5, 6, 5, 6,
                 7, 8, 7, 8,
                 9, 10, 9, 10
-            });
+            }, inputs2.Skip(0).Take((int)(/* steps */ 6 * (INPUT_SIZE * /* device count */ 2))).ToArray());
 
-            // TODO: add more tests with different Poll frequencies and different inputs all over the place
+            accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 0, 8 }));
+            accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 1, 9 }));
+
+            accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 2, 10 }));
+            accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 3, 11 }));
+
+            accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 4, 12 }));
+            accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 5, 13 }));
+
+            // give a chance to remote inputs to flow from one session to another
+            TestHelpers.PollSessions(sessions);
+
+            accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 0, 0 }));
+            accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 0, 0 }));
+
+            TestHelpers.AssertByteArrayEquals(new byte[] {
+                0, 0, 0, 0,
+                0, 8, 1, 9,
+                2, 10, 3, 11,
+                4, 12, 5, 13,
+            }, inputs1.Skip((int)(/* steps */ 6 * (INPUT_SIZE * /* device count */ 2))).Take((int)(/* steps */ 4 * (INPUT_SIZE * /* device count */ 2))).ToArray());
+            TestHelpers.AssertByteArrayEquals(new byte[] {
+                0, 0, 0, 0,
+                0, 8, 1, 9,
+                2, 10, 3, 11,
+                4, 12, 5, 13,
+            }, inputs2.Skip((int)(/* steps */ 6 * (INPUT_SIZE * /* device count */ 2))).Take((int)(/* steps */ 4 * (INPUT_SIZE * /* device count */ 2))).ToArray());
         }
     }
 
@@ -538,6 +572,21 @@ namespace PleaseResyncTest
                 }
 
                 System.Threading.Thread.Sleep(100);
+            }
+        }
+
+        public static void AssertByteArrayEquals(byte[] expected, byte[] actual)
+        {
+            if (expected.Length != actual.Length)
+            {
+                throw new ArgumentException($"Expected a byte array of length {expected} but got {expected} instead");
+            }
+            for (var i = 0; i < expected.Length; i++)
+            {
+                if (expected[i] != actual[i])
+                {
+                    throw new ArgumentException($"Expected a byte value of {expected[i]} but got {actual[i]} instead at index {i}");
+                }
             }
         }
     }
