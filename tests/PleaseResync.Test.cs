@@ -473,6 +473,7 @@ namespace PleaseResyncTest
                 7, 8, 7, 8,
                 9, 10, 9, 10
             }, inputs1.Skip(0).Take((int)(/* steps */ 6 * (INPUT_SIZE * /* device count */ 2))).ToArray());
+
             TestHelpers.AssertByteArrayEquals(new byte[] {
                 0, 0, 0, 0,
                 1, 2, 1, 2,
@@ -482,11 +483,20 @@ namespace PleaseResyncTest
                 9, 10, 9, 10
             }, inputs2.Skip(0).Take((int)(/* steps */ 6 * (INPUT_SIZE * /* device count */ 2))).ToArray());
 
+            // give a chance to remote inputs to flow from one session to another
+            TestHelpers.PollSessions(sessions);
+
             accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 0, 8 }));
             accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 1, 9 }));
 
+            // give a chance to remote inputs to flow from one session to another
+            TestHelpers.PollSessions(sessions);
+
             accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 2, 10 }));
             accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 3, 11 }));
+
+            // give a chance to remote inputs to flow from one session to another
+            TestHelpers.PollSessions(sessions);
 
             accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 4, 12 }));
             accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 5, 13 }));
@@ -503,12 +513,18 @@ namespace PleaseResyncTest
                 2, 10, 3, 11,
                 4, 12, 5, 13,
             }, inputs1.Skip((int)(/* steps */ 6 * (INPUT_SIZE * /* device count */ 2))).Take((int)(/* steps */ 4 * (INPUT_SIZE * /* device count */ 2))).ToArray());
+
             TestHelpers.AssertByteArrayEquals(new byte[] {
                 0, 0, 0, 0,
                 0, 8, 1, 9,
                 2, 10, 3, 11,
                 4, 12, 5, 13,
             }, inputs2.Skip((int)(/* steps */ 6 * (INPUT_SIZE * /* device count */ 2))).Take((int)(/* steps */ 4 * (INPUT_SIZE * /* device count */ 2))).ToArray());
+
+            foreach (var adapter in adapters)
+            {
+                adapter.Close();
+            }
         }
     }
 

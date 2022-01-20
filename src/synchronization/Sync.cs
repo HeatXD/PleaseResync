@@ -109,17 +109,17 @@ namespace PleaseResync
             {
                 foreach (var input in _deviceInputs)
                 {
-                    var predInputs = input.GetPredictedInputs();
-                    if (predInputs.Count > 0 && predInputs.Peek().Frame == i)
+                    var predInput = input.GetPredictedInput(i);
+                    if (predInput.Frame != GameInput.NullFrame && predInput.Frame == i)
                     {
                         // Incorrect Prediction
-                        if (!predInputs.Peek().Equal(input.GetInput(i, false), false))
+                        if (!predInput.Equal(input.GetInput(i, false), false))
                         {
                             foundFrame = i - 1;
                             foundMistake = true;
                         }
                         // remove prediction form queue
-                        predInputs.Dequeue();
+                        input.ResetPrediction(i);
                     }
                 }
                 if (foundMistake) break;

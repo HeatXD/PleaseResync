@@ -6,33 +6,33 @@ namespace PleaseResync
     internal class InputQueue
     {
         public const int QueueSize = 128;
-
-        private int _frameDelay;
+        private uint _frameDelay;
         private GameInput[] _inputs;
-        private Queue<GameInput> _lastPredictedInputs;
+        private GameInput[] _lastPredictedInputs;
 
         public InputQueue(uint inputSize, uint playerCount, uint frameDelay = 0)
         {
+            _frameDelay = frameDelay;
             _inputs = new GameInput[QueueSize];
-            _frameDelay = (int)frameDelay; // TODO: _frameDelay should be unsigned
-            _lastPredictedInputs = new Queue<GameInput>();
+            _lastPredictedInputs = new GameInput[QueueSize];
 
             for (int i = 0; i < _inputs.Length; i++)
             {
                 _inputs[i] = new GameInput(GameInput.NullFrame, inputSize, playerCount);
+                _lastPredictedInputs[i] = new GameInput(GameInput.NullFrame, inputSize, playerCount);
             }
         }
 
-        public Queue<GameInput> GetPredictedInputs()
+        public GameInput GetPredictedInput(int frame)
         {
-            return _lastPredictedInputs;
+            return _lastPredictedInputs[frame % QueueSize];
         }
 
         public void AddInput(int frame, GameInput input)
         {
             Debug.Assert(frame >= 0);
 
-            frame += _frameDelay;
+            frame += (int)_frameDelay;
             _inputs[frame % QueueSize] = new GameInput(input);
             _inputs[frame % QueueSize].Frame = frame;
         }
@@ -53,13 +53,20 @@ namespace PleaseResync
                     var prevFrame = _inputs[PreviousFrame(frameOffset)];
                     _inputs[frameOffset] = new GameInput(prevFrame);
                     _inputs[frameOffset].Frame = GameInput.NullFrame;
-                    // add predicted frame to the queue. when later is proved that the input was right it will be removed.
-                    var predicted = new GameInput(_inputs[frameOffset]);
-                    predicted.Frame = frame;
-                    _lastPredictedInputs.Enqueue(new GameInput(predicted));
+
+                    // add new predicted frame to the queue. when later is proved that the input was right or wrong it will be reset.
+                    _lastPredictedInputs[frameOffset] = new GameInput(_inputs[frameOffset]);
+                    _lastPredictedInputs[frameOffset].Frame = frame;
                 }
             }
             return new GameInput(_inputs[frameOffset]);
+        }
+
+        public void ResetPrediction(int frame)
+        {
+            // when resetting the prediction we just make the frame a null frame.
+            int frameOffset = frame % QueueSize;
+            _lastPredictedInputs[frameOffset].Frame = GameInput.NullFrame;
         }
 
         private int PreviousFrame(int offset) => (((offset) == 0) ? (QueueSize - 1) : ((offset) - 1));
