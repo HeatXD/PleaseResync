@@ -95,7 +95,10 @@ namespace PleaseResyncTest
                 }
             }
 
-            for (int i = 0; i < 100; i++)
+            byte[] LastInputP1 = TestHelpers.GetLocalInput();
+            byte[] LastInputP2 = TestHelpers.GetLocalInput();
+
+            for (int i = 0; i < 50; i++)
             {
                 foreach (var session in sessions)
                 {
@@ -105,16 +108,14 @@ namespace PleaseResyncTest
                 List<SessionAction> sessionActions1;
                 List<SessionAction> sessionActions2;
 
-                if (i < 10)
+                if (i % 2 == 0)
                 {
-                    sessionActions1 = session1.AdvanceFrame(TestHelpers.GetLocalInput());
-                    sessionActions2 = session2.AdvanceFrame(TestHelpers.GetLocalInput());
+                    LastInputP1 = TestHelpers.GetLocalInput();
+                    LastInputP2 = TestHelpers.GetLocalInput();
                 }
-                else
-                {
-                    sessionActions1 = session1.AdvanceFrame(new byte[] { 2, 4 });
-                    sessionActions2 = session2.AdvanceFrame(new byte[] { 21, 5 });
-                }
+
+                sessionActions1 = session1.AdvanceFrame(LastInputP1);
+                sessionActions2 = session2.AdvanceFrame(LastInputP2);
 
                 foreach (var action in sessionActions1)
                 {
@@ -486,17 +487,12 @@ namespace PleaseResyncTest
             // give a chance to remote inputs to flow from one session to another
             TestHelpers.PollSessions(sessions);
 
+            // irregular poll/advance sync cycle
             accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 0, 8 }));
             accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 1, 9 }));
 
-            // give a chance to remote inputs to flow from one session to another
-            TestHelpers.PollSessions(sessions);
-
             accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 2, 10 }));
             accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 3, 11 }));
-
-            // give a chance to remote inputs to flow from one session to another
-            TestHelpers.PollSessions(sessions);
 
             accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 4, 12 }));
             accumulateInputs(inputs2, session2.AdvanceFrame(new byte[] { 5, 13 }));

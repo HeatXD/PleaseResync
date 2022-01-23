@@ -110,10 +110,11 @@ namespace PleaseResync
                 foreach (var input in _deviceInputs)
                 {
                     var predInput = input.GetPredictedInput(i);
-                    if (predInput.Frame != GameInput.NullFrame && predInput.Frame == i)
+                    if (predInput.Frame == i &&
+                        input.GetInput(i, false).Frame == i)
                     {
                         // Incorrect Prediction
-                        if (!predInput.Equal(input.GetInput(i, false), false))
+                        if (!predInput.Equal(input.GetInput(i, false), true))
                         {
                             foundFrame = i - 1;
                             foundMistake = true;
