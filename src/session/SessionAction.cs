@@ -64,18 +64,13 @@ namespace PleaseResync
     /// </summary>
     public class SessionAdvanceFrameAction : SessionAction
     {
-        private Sync _sync;
-        public byte[] Inputs
+        public byte[] Inputs;
+        internal SessionAdvanceFrameAction(int frame, byte[] inputs)
         {
-            get => _sync.GetFrameInput(Frame).Inputs;
-        }
-
-        internal SessionAdvanceFrameAction(int frame, Sync sync)
-        {
-            Debug.Assert(sync != null);
+            Debug.Assert(inputs != null);
 
             Frame = frame;
-            _sync = sync;
+            Inputs = inputs;
         }
 
         public override string ToString() { return $"{typeof(SessionAdvanceFrameAction)}: {new { Frame, Inputs }}"; }

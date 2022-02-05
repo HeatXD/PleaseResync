@@ -62,7 +62,9 @@ namespace PleaseResync
                 actions.Add(new SessionLoadGameAction(_timeSync.SyncFrame, _stateStorage));
                 for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
                 {
-                    actions.Add(new SessionAdvanceFrameAction(i, this));
+                    var game = GetFrameInput(i);
+
+                    actions.Add(new SessionAdvanceFrameAction(i, game.Inputs));
                     actions.Add(new SessionSaveGameAction(i, _stateStorage));
                 }
             }
@@ -82,7 +84,9 @@ namespace PleaseResync
 
                 SendLocalInputs(localDeviceId);
 
-                actions.Add(new SessionAdvanceFrameAction(_timeSync.LocalFrame, this));
+                var game = GetFrameInput(_timeSync.LocalFrame);
+
+                actions.Add(new SessionAdvanceFrameAction(_timeSync.LocalFrame, game.Inputs));
                 actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
             }
 
