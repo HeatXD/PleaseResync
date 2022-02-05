@@ -62,8 +62,7 @@ namespace PleaseResync
                 actions.Add(new SessionLoadGameAction(_timeSync.SyncFrame, _stateStorage));
                 for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
                 {
-                    var inputs = GetFrameInput(i).Inputs;
-                    actions.Add(new SessionAdvanceFrameAction(i, inputs));
+                    actions.Add(new SessionAdvanceFrameAction(i, this));
                     actions.Add(new SessionSaveGameAction(i, _stateStorage));
                 }
             }
@@ -80,20 +79,38 @@ namespace PleaseResync
                 _timeSync.LocalFrame++;
 
                 AddLocalInput(localDeviceId, deviceInput);
-                var inputs = GetFrameInput(_timeSync.LocalFrame).Inputs;
 
-                actions.Add(new SessionAdvanceFrameAction(_timeSync.LocalFrame, inputs));
+                actions.Add(new SessionAdvanceFrameAction(_timeSync.LocalFrame, this));
                 actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
 
-                foreach (var device in _devices)
-                {
-                    if (device.Type == Device.DeviceType.Remote)
-                    {
-                        device.SendMessage(new DeviceInputMessage { Frame = (uint)_timeSync.LocalFrame, Input = deviceInput });
-                    }
-                }
+                SendLocalInputs(localDeviceId);
             }
             return actions;
+        }
+
+        private void SendLocalInputs(uint localDeviceId)
+        {
+            foreach (var device in _devices)
+            {
+                if (device.Type == Device.DeviceType.Remote)
+                {
+                    uint finalFrame = (uint)(_timeSync.LocalFrame + _deviceInputs[localDeviceId].GetFrameDelay());
+
+                    var combinedInput = new List<byte>();
+
+                    for (uint i = device.LastAckedInputFrame; i <= finalFrame; i++)
+                    {
+                        combinedInput.AddRange(GetDeviceInput((int)i, localDeviceId).Inputs);
+                    }
+
+                    device.SendMessage(new DeviceInputMessage
+                    {
+                        StartFrame = device.LastAckedInputFrame,
+                        EndFrame = finalFrame,
+                        Input = combinedInput.ToArray()
+                    });
+                }
+            }
         }
 
         private void UpdateSyncFrame()
@@ -152,7 +169,7 @@ namespace PleaseResync
             return _deviceInputs[deviceId].GetInput(frame);
         }
 
-        private GameInput GetFrameInput(int frame)
+        public GameInput GetFrameInput(int frame)
         {
             uint playerCount = 0;
             foreach (var device in _devices)

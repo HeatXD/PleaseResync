@@ -28,6 +28,8 @@ namespace PleaseResync
             return _lastPredictedInputs[frame % QueueSize];
         }
 
+        public uint GetFrameDelay() => _frameDelay;
+
         public void AddInput(int frame, GameInput input)
         {
             Debug.Assert(frame >= 0);

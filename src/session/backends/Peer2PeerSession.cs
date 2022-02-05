@@ -89,7 +89,22 @@ namespace PleaseResync
 
         internal protected override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
         {
-            _sync.AddRemoteInput(deviceId, (int)message.Frame, message.Input);
+
+            uint inputCount = (message.EndFrame - message.StartFrame) + 1;
+            uint inputSize = (uint)(message.Input.Length / inputCount);
+
+            System.Console.WriteLine($"Recieved Inputs For Frames {message.StartFrame} to {message.EndFrame}. count: {inputCount}. size per input: {inputSize}");
+
+            int inputIndex = 0;
+            for (uint i = message.StartFrame; i <= message.EndFrame; i++)
+            {
+                byte[] inputsForFrame = new byte[message.Input.Length / inputCount];
+
+                System.Array.Copy(message.Input, inputIndex * inputSize, inputsForFrame, 0, inputSize);
+                _sync.AddRemoteInput(deviceId, (int)i, inputsForFrame);
+
+                inputIndex++;
+            }
         }
     }
 }

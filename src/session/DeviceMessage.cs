@@ -43,11 +43,13 @@ namespace PleaseResync
     public class DeviceInputMessage : DeviceMessage
     {
         [Key(1)]
-        public uint Frame;
+        public uint StartFrame;
         [Key(2)]
+        public uint EndFrame;
+        [Key(3)]
         public byte[] Input;
 
-        public override string ToString() { return $"{typeof(DeviceInputMessage)}: {new { Frame, Input }}"; }
+        public override string ToString() { return $"{typeof(DeviceInputMessage)}: {new { StartFrame, EndFrame, Input }}"; }
     }
 
     [MessagePackObject]
