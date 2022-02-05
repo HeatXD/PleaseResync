@@ -67,10 +67,7 @@ namespace PleaseResync
         private Sync _sync;
         public byte[] Inputs
         {
-            get
-            {
-                return Platform.CloneByteArray(_sync.GetFrameInput(Frame).Inputs);
-            }
+            get => _sync.GetFrameInput(Frame).Inputs;
         }
 
         internal SessionAdvanceFrameAction(int frame, Sync sync)

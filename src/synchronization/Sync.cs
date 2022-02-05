@@ -30,10 +30,10 @@ namespace PleaseResync
             {
                 _devices[deviceId].RemoteFrame = frame;
                 _devices[deviceId].RemoteFrameAdvantage = _timeSync.LocalFrame - frame;
+                // let them know u recieved the packet
+                _devices[deviceId].SendMessage(new DeviceInputAckMessage { Frame = (uint)frame });
             }
-
             AddDeviceInput(frame, deviceId, deviceInput);
-            _devices[deviceId].SendMessage(new DeviceInputAckMessage { Frame = (uint)frame });
         }
 
         public void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)
@@ -80,11 +80,12 @@ namespace PleaseResync
 
                 AddLocalInput(localDeviceId, deviceInput);
 
+                SendLocalInputs(localDeviceId);
+
                 actions.Add(new SessionAdvanceFrameAction(_timeSync.LocalFrame, this));
                 actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
-
-                SendLocalInputs(localDeviceId);
             }
+
             return actions;
         }
 
