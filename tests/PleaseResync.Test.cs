@@ -108,7 +108,7 @@ namespace PleaseResyncTest
                 List<SessionAction> sessionActions1;
                 List<SessionAction> sessionActions2;
 
-                if (i % 2 == 0)
+                if (i % 4 == 0)
                 {
                     LastInputP1 = TestHelpers.GetLocalInput();
                     LastInputP2 = TestHelpers.GetLocalInput();
