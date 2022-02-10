@@ -15,7 +15,7 @@ namespace PleaseResyncTest
         private const ushort LOCAL_PORT_1 = 7001;
         private const ushort LOCAL_PORT_2 = 7002;
         private const ushort LOCAL_PORT_3 = 7003;
-        private static readonly string LOCAL_ADDRESS = "127.0.0.1";
+        private const string LOCAL_ADDRESS = "127.0.0.1";
 
         [TestMethod]
         [TimeoutAttribute(5000)]

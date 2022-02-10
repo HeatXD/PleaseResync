@@ -1,6 +1,9 @@
 using System;
 using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("PleaseResync.Perf")]
+[assembly: InternalsVisibleTo("PleaseResync.Test")]
+
 namespace PleaseResync
 {
     internal static class Platform

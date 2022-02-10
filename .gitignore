@@ -2,4 +2,7 @@ src/bin
 src/obj
 tests/bin
 tests/obj
+perfs/bin
+perfs/obj
+perfs/BenchmarkDotNet.Artifacts
 .vscode

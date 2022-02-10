@@ -13,6 +13,8 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="..\README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="MessagePack" Version="2.3.85" />
   </ItemGroup>
 </Project>
