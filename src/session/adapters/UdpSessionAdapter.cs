@@ -1,33 +1,26 @@
 using System;
 using System.Net;
+using LiteNetLib;
 using MessagePack;
 using System.Net.Sockets;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 namespace PleaseResync
 {
-    public class UdpSessionAdapter : SessionAdapter
+    public class UdpSessionAdapter : SessionAdapter, INetEventListener
     {
-        private const int SIO_UDP_CONNRESET = -1744830452;
-
-        private readonly UdpClient _udpClient;
         private readonly IPEndPoint[] _remoteEndpoints;
 
-        private IPEndPoint _remoteReceiveEndpoint;
+        private NetManager _netManager;
+        private List<(uint size, uint deviceId, DeviceMessage message)> _messages;
 
         public UdpSessionAdapter(IPEndPoint endpoint)
         {
-            _udpClient = new UdpClient();
-            _udpClient.Client.Blocking = false;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                _udpClient.Client.IOControl((IOControlCode)SIO_UDP_CONNRESET, new byte[] { 0, 0, 0, 0 }, null);
-            }
-            _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            _udpClient.Client.Bind(endpoint);
+            _messages = new List<(uint size, uint deviceId, DeviceMessage message)>();
+            _netManager = new NetManager(this);
+            _netManager.Start(endpoint.Port);
+            _netManager.ReuseAddress = true;
             _remoteEndpoints = new IPEndPoint[Session.LIMIT_DEVICE_COUNT];
-            _remoteReceiveEndpoint = default(IPEndPoint);
         }
 
         public UdpSessionAdapter(ushort localPort) : this(new IPEndPoint(IPAddress.Any, localPort))
@@ -41,19 +34,25 @@ namespace PleaseResync
         public uint SendTo(uint deviceId, DeviceMessage message)
         {
             var packet = MessagePackSerializer.Serialize(message);
-            return (uint)_udpClient.Send(packet, packet.Length, _remoteEndpoints[deviceId]);
+
+            foreach (var peer in _netManager.ConnectedPeerList)
+            {
+                if (peer.EndPoint.Port == _remoteEndpoints[deviceId].Port)
+                {
+                    peer.Send(packet, DeliveryMethod.Unreliable);
+                    return (uint)packet.Length;
+                }
+            }
+            return 0;
         }
 
         public List<(uint size, uint deviceId, DeviceMessage message)> ReceiveFrom()
         {
-            var messages = new List<(uint size, uint deviceId, DeviceMessage message)>();
-            if (_udpClient.Available > 0)
-            {
-                var packet = _udpClient.Receive(ref _remoteReceiveEndpoint);
-                var message = MessagePackSerializer.Deserialize<DeviceMessage>(packet);
-                messages.Add(((uint)packet.Length, FindDeviceIdFromEndpoint(_remoteReceiveEndpoint), message));
-            }
-            return messages;
+            _netManager.PollEvents();
+
+            var copy = new List<(uint size, uint deviceId, DeviceMessage message)>(_messages);
+            _messages.Clear();
+            return copy;
         }
 
         public void AddRemote(uint deviceId, object remoteConfiguration)
@@ -61,6 +60,7 @@ namespace PleaseResync
             if (remoteConfiguration is IPEndPoint remoteEndpoint)
             {
                 _remoteEndpoints[deviceId] = remoteEndpoint;
+                _netManager.Connect(remoteEndpoint.Address.ToString(), remoteEndpoint.Port, "ok");
             }
             else
             {
@@ -80,6 +80,49 @@ namespace PleaseResync
             throw new Exception($"Device ID not found for endpoint {endpoint}");
         }
 
+        public void Close()
+        {
+            _netManager.DisconnectAll();
+            _netManager.Stop();
+        }
+
+        #region Netmanager events
+
+        public void OnPeerConnected(NetPeer peer)
+        {
+        }
+
+        public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
+        {
+        }
+
+        public void OnNetworkError(IPEndPoint endPoint, SocketError socketError)
+        {
+        }
+
+        public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)
+        {
+            var packet = reader.GetRemainingBytes();
+
+            var message = MessagePackSerializer.Deserialize<DeviceMessage>(packet);
+            _messages.Add(((uint)packet.Length, FindDeviceIdFromEndpoint(peer.EndPoint), message));
+        }
+
+        public void OnNetworkReceiveUnconnected(IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType)
+        {
+        }
+
+        public void OnNetworkLatencyUpdate(NetPeer peer, int latency)
+        {
+        }
+
+        public void OnConnectionRequest(ConnectionRequest request)
+        {
+            request.Accept();
+        }
+
+        #endregion
+
         #region Remote Configuration
 
         public static IPEndPoint CreateRemoteConfig(IPEndPoint endpoint)
@@ -95,12 +138,6 @@ namespace PleaseResync
         public static IPEndPoint CreateRemoteConfig(IPAddress remoteAddress, ushort remotePort)
         {
             return new IPEndPoint(remoteAddress, remotePort);
-        }
-
-        public void Close()
-        {
-            _udpClient.Close();
-            _udpClient.Dispose();
         }
 
         #endregion
