@@ -19,7 +19,7 @@ namespace PleaseResync
             RemoteFrameAdvantage = 0;
         }
 
-        public bool IsTimeSynced(Device[] devices)
+        public void UpdateTimeSync(Device[] devices)
         {
             int minRemoteFrame = int.MaxValue;
             int maxRemoteFrameAdvantage = int.MinValue;
@@ -43,12 +43,6 @@ namespace PleaseResync
             // Set variables
             RemoteFrame = minRemoteFrame;
             RemoteFrameAdvantage = maxRemoteFrameAdvantage;
-            // How far the client is ahead of the last reported frame by the remote clients           
-            int localFrameAdvantage = LocalFrame - RemoteFrame;
-            // How different is the frame advantage reported by the remote clients and this one
-            int frameAdvantageDiff = localFrameAdvantage - RemoteFrameAdvantage;
-            // Only allow the local client to get so far ahead of remote.
-            return localFrameAdvantage < MaxRollbackFrames && frameAdvantageDiff <= FrameAdvantageLimit;
         }
 
         public bool ShouldRollback()

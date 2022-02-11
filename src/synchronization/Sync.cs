@@ -51,44 +51,46 @@ namespace PleaseResync
             // should be called after polling the remote devices for their messages.
             Debug.Assert(deviceInput != null);
 
-            bool isTimeSynced = _timeSync.IsTimeSynced(_devices);
+            var actions = new List<SessionAction>();
 
+            // create savestate at the initialFrame to support rolling back to it
+            // for example if initframe = 0 then 0 will be first save option to rollback to.
+            if (_timeSync.LocalFrame == TimeSync.InitialFrame)
+            {
+                actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
+            }
+
+            // update time sync variables
+            _timeSync.UpdateTimeSync(_devices);
+
+            // find the first frame where you have inputs of all devices
             UpdateSyncFrame();
 
-            var actions = new List<SessionAction>();
             // rollback update
             if (_timeSync.ShouldRollback())
             {
                 actions.Add(new SessionLoadGameAction(_timeSync.SyncFrame, _stateStorage));
                 for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
                 {
-                    var game = GetFrameInput(i);
-
-                    actions.Add(new SessionAdvanceFrameAction(i, game.Inputs));
-                    actions.Add(new SessionSaveGameAction(i, _stateStorage));
+                    actions.Add(new SessionAdvanceFrameAction(i, GetFrameInput(i).Inputs));
+                    actions.Add(new SessionSaveGameAction(i, _stateStorage)); //? later add an less intensive save method? saving every frame might not be needed.
                 }
             }
+
             // normal update
-            if (isTimeSynced)
-            {
-                // create savestate at the initialFrame to support rolling back to it
-                // for example if initframe = 0 then 0 will be first save option to rollback to.
-                if (_timeSync.LocalFrame == TimeSync.InitialFrame)
-                {
-                    actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
-                }
+            _timeSync.LocalFrame++;
 
-                _timeSync.LocalFrame++;
+            AddLocalInput(localDeviceId, deviceInput);
 
-                AddLocalInput(localDeviceId, deviceInput);
+            var game = GetFrameInput(_timeSync.LocalFrame);
 
-                SendLocalInputs(localDeviceId);
+            actions.Add(new SessionAdvanceFrameAction(_timeSync.LocalFrame, game.Inputs));
+            actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
 
-                var game = GetFrameInput(_timeSync.LocalFrame);
+            //send inputs to remote devices 
+            SendLocalInputs(localDeviceId);
 
-                actions.Add(new SessionAdvanceFrameAction(_timeSync.LocalFrame, game.Inputs));
-                actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
-            }
+            // Todo Skip Frame Event for the user to implement to keep the game in sync
 
             return actions;
         }
