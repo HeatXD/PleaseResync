@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace PleaseResync
 {
@@ -7,19 +5,23 @@ namespace PleaseResync
     {
         public const int QueueSize = 128;
         private uint _frameDelay;
+        private uint _inputSize;
+        private uint _playerCount;
         private GameInput[] _inputs;
         private GameInput[] _lastPredictedInputs;
 
         public InputQueue(uint inputSize, uint playerCount, uint frameDelay = 0)
         {
+            _inputSize = inputSize;
             _frameDelay = frameDelay;
+            _playerCount = playerCount;
             _inputs = new GameInput[QueueSize];
             _lastPredictedInputs = new GameInput[QueueSize];
 
             for (int i = 0; i < _inputs.Length; i++)
             {
-                _inputs[i] = new GameInput(GameInput.NullFrame, inputSize, playerCount);
-                _lastPredictedInputs[i] = new GameInput(GameInput.NullFrame, inputSize, playerCount);
+                _inputs[i] = EmptyInput();
+                _lastPredictedInputs[i] = EmptyInput();
             }
         }
 
@@ -28,20 +30,31 @@ namespace PleaseResync
             return _lastPredictedInputs[frame % QueueSize];
         }
 
+        public GameInput EmptyInput()
+        {
+            return new GameInput(GameInput.NullFrame, _inputSize, _playerCount);
+        }
+
         public uint GetFrameDelay() => _frameDelay;
 
-        public void AddInput(int frame, GameInput input)
+        public int AddInput(int frame, GameInput input)
         {
-            Debug.Assert(frame >= 0);
+            if (frame != GameInput.NullFrame)
+            {
+                frame += (int)_frameDelay;
+                _inputs[frame % QueueSize] = new GameInput(input);
+                _inputs[frame % QueueSize].Frame = frame;
+            }
 
-            frame += (int)_frameDelay;
-            _inputs[frame % QueueSize] = new GameInput(input);
-            _inputs[frame % QueueSize].Frame = frame;
+            return frame;
         }
 
         public GameInput GetInput(int frame, bool predict = true)
         {
-            Debug.Assert(frame >= 0);
+            if (frame == GameInput.NullFrame)
+            {
+                return EmptyInput();
+            }
 
             int frameOffset = frame % QueueSize;
             // predict if needed

@@ -2,9 +2,7 @@ namespace PleaseResync
 {
     internal class TimeSync
     {
-        public const int InitialFrame = 0;
-        public const int MaxRollbackFrames = 7;
-        public const int FrameAdvantageLimit = 5;
+        public const int MaxRollbackFrames = 6;
 
         public int SyncFrame;
         public int LocalFrame;
@@ -13,10 +11,15 @@ namespace PleaseResync
 
         public TimeSync()
         {
-            SyncFrame = InitialFrame;
-            LocalFrame = InitialFrame;
-            RemoteFrame = InitialFrame;
+            SyncFrame = GameInput.NullFrame;
+            LocalFrame = GameInput.NullFrame;
+            RemoteFrame = GameInput.NullFrame;
             RemoteFrameAdvantage = 0;
+        }
+
+        public bool PredictionLimitReached()
+        {
+            return LocalFrame >= MaxRollbackFrames && RemoteFrameAdvantage >= MaxRollbackFrames;
         }
 
         public void UpdateTimeSync(Device[] devices)
@@ -40,15 +43,8 @@ namespace PleaseResync
                     }
                 }
             }
-            // Set variables
             RemoteFrame = minRemoteFrame;
             RemoteFrameAdvantage = maxRemoteFrameAdvantage;
-        }
-
-        public bool ShouldRollback()
-        {
-            // No need to rollback if we don't have a frame after the previous sync frame to synchronize to.
-            return LocalFrame > SyncFrame && RemoteFrame > SyncFrame;
         }
     }
 }

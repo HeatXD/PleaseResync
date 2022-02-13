@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System;
 
 namespace PleaseResync
 {
@@ -76,9 +77,71 @@ namespace PleaseResync
         public override List<SessionAction> AdvanceFrame(byte[] localInput)
         {
             Debug.Assert(IsRunning(), "Session must be running before calling AdvanceFrame");
-            Debug.Assert(localInput != null);
+            Debug.Assert(localInput != null, "The session needs local input to advance the state");
 
-            return _sync.AdvanceSync(_localDevice.Id, localInput);
+            var actions = new List<SessionAction>();
+
+            // save state of the initial frame
+            if (_sync.CurrentFrame() == 0)
+            {
+                actions.Add(_sync.SaveCurrentFrame());
+            }
+
+            _sync.UpdateTimeSync();
+
+            // the frame where the session has inputs form all devices
+            int confirmedFrame = ConfirmedFrame();
+
+            _sync.UpdateSyncFrame();
+
+            // the frame where the inputs are still correct, 1 frame before the incorrect frame
+            int syncFrame = _sync.SyncFrame();
+
+            if (syncFrame != GameInput.NullFrame)
+            {
+                CorrectGameState(syncFrame, confirmedFrame, actions);
+            }
+
+            // TODO Send confirmed frames to spectators 
+            // TODO Notify the local device whether to wait or not and for how long. to keep the simulation in sync
+
+            //Add local input to session
+            if (_sync.AddLocalInput(_localDevice.Id, localInput) != GameInput.NullFrame)
+            {
+                // send local device inputs to the remote devices
+                _sync.SendLocalInputs(LocalDevice.Id);
+            }
+
+            // advance the game state
+            var game = _sync.GetFrameInput(_sync.CurrentFrame());
+            _sync.IncrementFrame();
+            actions.Add(new SessionAdvanceFrameAction(_sync.CurrentFrame(), game.Inputs));
+
+            return actions;
+        }
+
+        private void CorrectGameState(int syncFrame, int confirmedFrame, List<SessionAction> actions)
+        {
+            int currentFrame = _sync.CurrentFrame();
+
+            actions.Add(_sync.LoadFrame(syncFrame));
+
+            for (int i = syncFrame + 1; i <= currentFrame; i++)
+            {
+                var synced = _sync.GetFrameInput(i);
+
+                _sync.IncrementFrame();
+                actions.Add(new SessionAdvanceFrameAction(i, synced.Inputs));
+                actions.Add(_sync.SaveCurrentFrame());
+            }
+
+            Debug.Assert(_sync.CurrentFrame() == currentFrame);
+        }
+
+        private int ConfirmedFrame()
+        {
+            int curr = _sync.CurrentFrame(), remote = _sync.RemoteFrame();
+            return curr > remote ? remote : curr;
         }
 
         internal protected override uint SendMessageTo(uint deviceId, DeviceMessage message)
