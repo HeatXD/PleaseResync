@@ -31,10 +31,10 @@ namespace PleaseResync
             {
                 _devices[deviceId].RemoteFrame = frame;
                 _devices[deviceId].RemoteFrameAdvantage = _timeSync.LocalFrame - frame;
-                // let them know u recieved the packet
-                _devices[deviceId].SendMessage(new DeviceInputAckMessage { Frame = (uint)frame });
             }
             AddDeviceInput(frame, deviceId, deviceInput);
+            // let them know u recieved the packet
+            _devices[deviceId].SendMessage(new DeviceInputAckMessage { Frame = (uint)frame });
         }
 
         public void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)
@@ -52,55 +52,6 @@ namespace PleaseResync
         public int LocalFrame() => _timeSync.LocalFrame;
 
         public void IncrementFrame() => _timeSync.LocalFrame++;
-
-        public List<SessionAction> AdvanceSync(uint localDeviceId, byte[] deviceInput)
-        {
-            // should be called after polling the remote devices for their messages.
-            Debug.Assert(deviceInput != null);
-
-            var actions = new List<SessionAction>();
-
-            // create savestate at the initialFrame to support rolling back to it
-            // for example if initframe = 0 then 0 will be first save option to rollback to.
-            if (_timeSync.LocalFrame == TimeSync.InitialFrame)
-            {
-                actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
-            }
-
-            // update time sync variables
-            _timeSync.UpdateTimeSync(_devices);
-
-            // find the first frame where you have inputs of all devices
-            UpdateSyncFrame();
-
-            // rollback update
-            if (_timeSync.ShouldRollback())
-            {
-                actions.Add(new SessionLoadGameAction(_timeSync.SyncFrame, _stateStorage));
-                for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
-                {
-                    actions.Add(new SessionAdvanceFrameAction(i, GetFrameInput(i).Inputs));
-                    actions.Add(new SessionSaveGameAction(i, _stateStorage)); //? later add an less intensive save method? saving every frame might not be needed.
-                }
-            }
-
-            // normal update
-            _timeSync.LocalFrame++;
-
-            AddLocalInput(localDeviceId, deviceInput);
-
-            var game = GetFrameInput(_timeSync.LocalFrame);
-
-            actions.Add(new SessionAdvanceFrameAction(_timeSync.LocalFrame, game.Inputs));
-            actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
-
-            //send inputs to remote devices 
-            SendLocalInputs(localDeviceId);
-
-            // Todo Skip Frame Event for the user to implement to keep the game in sync
-
-            return actions;
-        }
 
         public void SendLocalInputs(uint localDeviceId)
         {
@@ -170,8 +121,16 @@ namespace PleaseResync
             // only allow adding input to the local device
             Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Local);
             // check if the predictition threshold has been reached. if it has reached the predictition threshold drop the input.
-            Debug.Assert(_timeSync.PredictionLimitReached() == false, "Prediction Limit Reached!");
-            AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
+
+            // otherwise return the frame where the input has been added with input delay
+            if (_timeSync.PredictionLimitReached())
+            {
+                System.Console.WriteLine("Prediction Limit Reached!");
+            }
+            else
+            {
+                AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
+            }
         }
 
         private void AddDeviceInput(int frame, uint deviceId, byte[] deviceInput)
