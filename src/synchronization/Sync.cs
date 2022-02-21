@@ -121,16 +121,8 @@ namespace PleaseResync
             // only allow adding input to the local device
             Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Local);
             // check if the predictition threshold has been reached. if it has reached the predictition threshold drop the input.
-
-            // otherwise return the frame where the input has been added with input delay
-            if (_timeSync.PredictionLimitReached())
-            {
-                System.Console.WriteLine("Prediction Limit Reached!");
-            }
-            else
-            {
-                AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
-            }
+            Debug.Assert(_timeSync.PredictionLimitReached() == false, "Prediction Limit Reached!");
+            AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
         }
 
         private void AddDeviceInput(int frame, uint deviceId, byte[] deviceInput)
