@@ -7,14 +7,14 @@ namespace PleaseResync
         public int SyncFrame;
         public int LocalFrame;
         public int RemoteFrame;
-        public int RemoteFrameAdvantage;
+        public int FrameAdvantage;
 
         public TimeSync()
         {
             SyncFrame = InitialFrame;
             LocalFrame = InitialFrame;
             RemoteFrame = InitialFrame;
-            RemoteFrameAdvantage = 0;
+            FrameAdvantage = InitialFrame;
         }
 
         public void UpdateTimeSync(Device[] devices)
@@ -40,7 +40,7 @@ namespace PleaseResync
             }
             // Set variables
             RemoteFrame = minRemoteFrame;
-            RemoteFrameAdvantage = maxRemoteFrameAdvantage;
+            FrameAdvantage = maxRemoteFrameAdvantage;
         }
 
         public bool ShouldRollback()
@@ -51,7 +51,7 @@ namespace PleaseResync
 
         public bool PredictionLimitReached()
         {
-            return LocalFrame >= MaxRollbackFrames && RemoteFrameAdvantage >= MaxRollbackFrames;
+            return LocalFrame >= MaxRollbackFrames && FrameAdvantage >= MaxRollbackFrames;
         }
     }
 }

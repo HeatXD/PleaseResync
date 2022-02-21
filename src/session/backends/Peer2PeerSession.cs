@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System;
 
 namespace PleaseResync
 {
@@ -18,11 +19,18 @@ namespace PleaseResync
         private Sync _sync;
         private Device _localDevice;
 
+        // events
+        private const int MinSuggestionTime = 3;
+        private Queue<SessionEvent> _sessionEvents;
+        private int _nextSuggestedWait;
+
         public Peer2PeerSession(uint inputSize, uint deviceCount, uint totalPlayerCount, SessionAdapter adapter) : base(inputSize, deviceCount, totalPlayerCount)
         {
             _allDevices = new Device[deviceCount];
             _sessionAdapter = adapter;
             _sync = new Sync(_allDevices, inputSize);
+            _nextSuggestedWait = 0;
+            _sessionEvents = new Queue<SessionEvent>(32);
         }
 
         public override void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)
@@ -119,9 +127,19 @@ namespace PleaseResync
             //send inputs to remote devices 
             _sync.SendLocalInputs(LocalDevice.Id);
 
-            // Todo Skip Frame Event for the user to implement to keep the game in sync
+            CheckWaitSuggestion();
 
             return actions;
+        }
+
+        private void CheckWaitSuggestion()
+        {
+            if (_sync.LocalFrame() > _nextSuggestedWait && _sync.FrameAdvantage() >= MinSuggestionTime)
+            {
+                _nextSuggestedWait = _sync.LocalFrame() + MinSuggestionTime;
+                var suggestedWait = new WaitSuggestionEvent { Frames = (uint)_sync.FrameAdvantage() };
+                _sessionEvents.Enqueue(suggestedWait);
+            }
         }
 
         internal protected override uint SendMessageTo(uint deviceId, DeviceMessage message)
@@ -148,6 +166,11 @@ namespace PleaseResync
 
                 inputIndex++;
             }
+        }
+
+        public override Queue<SessionEvent> Events()
+        {
+            return _sessionEvents;
         }
     }
 }

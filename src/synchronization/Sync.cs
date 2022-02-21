@@ -162,5 +162,7 @@ namespace PleaseResync
             }
             return input;
         }
+
+        public int FrameAdvantage() => _timeSync.FrameAdvantage;
     }
 }

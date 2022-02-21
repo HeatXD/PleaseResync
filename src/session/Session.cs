@@ -84,6 +84,10 @@ namespace PleaseResync
         /// </summary>
         public abstract void Poll();
         /// <summary>
+        /// Returns a queue with all the events that happend since the last call to this function.
+        /// <summary>
+        public abstract Queue<SessionEvent> Events();
+        /// <summary>
         /// IsRunning returns true when all the Sessions are synchronized and ready to accept inputs.
         /// </summary>
         public abstract bool IsRunning();
