@@ -63,6 +63,113 @@ namespace PleaseResyncTest
             }
         }
 
+        [Ignore]
+        [TestMethod]
+        [TimeoutAttribute(5000)]
+        public void Test_RollbackSequence()
+        {
+            var sessionState1 = new TestHelpers.TestState(0, 0);
+            var sessionState2 = new TestHelpers.TestState(0, 0);
+
+            uint device1 = 0;
+            uint device2 = 1;
+
+            var adapter1 = new UdpSessionAdapter(LOCAL_PORT_1);
+            var adapter2 = new UdpSessionAdapter(LOCAL_PORT_2);
+            var adapters = new UdpSessionAdapter[] { adapter1, adapter2 };
+
+            var session1 = new Peer2PeerSession(INPUT_SIZE, 2, 2, adapter1);
+            var session2 = new Peer2PeerSession(INPUT_SIZE, 2, 2, adapter2);
+            var sessions = new Peer2PeerSession[] { session1, session2 };
+
+            session1.SetLocalDevice(device1, 1, FRAME_DELAY);
+            session1.AddRemoteDevice(device2, 1, UdpSessionAdapter.CreateRemoteConfig(LOCAL_ADDRESS, LOCAL_PORT_2));
+
+            session2.SetLocalDevice(device2, 1, FRAME_DELAY);
+            session2.AddRemoteDevice(device1, 1, UdpSessionAdapter.CreateRemoteConfig(LOCAL_ADDRESS, LOCAL_PORT_1));
+
+            while (!sessions.All(session => session.IsRunning()))
+            {
+                foreach (var session in sessions)
+                {
+                    session.Poll();
+                }
+            }
+
+            byte[] LastInputP1 = TestHelpers.GetLocalInput();
+            byte[] LastInputP2 = TestHelpers.GetLocalInput();
+
+            for (int i = 0; i < 50; i++)
+            {
+                foreach (var session in sessions)
+                {
+                    session.Poll();
+                }
+
+                List<SessionAction> sessionActions1;
+                List<SessionAction> sessionActions2;
+
+                if (i % 4 == 0)
+                {
+                    LastInputP1 = TestHelpers.GetLocalInput();
+                    LastInputP2 = TestHelpers.GetLocalInput();
+                }
+
+                var sessionEvents1 = session1.Events();
+                var sessionEvents2 = session2.Events();
+
+                sessionActions1 = session1.AdvanceFrame(LastInputP1);
+                sessionActions2 = session2.AdvanceFrame(LastInputP2);
+
+                while (sessionEvents1.Count > 0)
+                {
+                    Console.WriteLine(sessionEvents1.Dequeue().Desc());
+                }
+
+                while (sessionEvents2.Count > 0)
+                {
+                    Console.WriteLine(sessionEvents2.Dequeue().Desc());
+                }
+
+                foreach (var action in sessionActions1)
+                {
+                    switch (action)
+                    {
+                        case SessionAdvanceFrameAction AFAction:
+                            sessionState1.Update(AFAction.Inputs);
+                            break;
+                        case SessionLoadGameAction LGAction:
+                            sessionState1 = MessagePackSerializer.Deserialize<TestHelpers.TestState>(LGAction.Load());
+                            break;
+                        case SessionSaveGameAction SGAction:
+                            SGAction.Save(MessagePackSerializer.Serialize(sessionState1));
+                            break;
+                    }
+                }
+
+                foreach (var action in sessionActions2)
+                {
+                    switch (action)
+                    {
+                        case SessionAdvanceFrameAction AFAction:
+                            sessionState2.Update(AFAction.Inputs);
+                            break;
+                        case SessionLoadGameAction LGAction:
+                            sessionState2 = MessagePackSerializer.Deserialize<TestHelpers.TestState>(LGAction.Load());
+                            break;
+                        case SessionSaveGameAction SGAction:
+                            SGAction.Save(MessagePackSerializer.Serialize(sessionState2));
+                            break;
+                    }
+                }
+            }
+
+            foreach (var adapter in adapters)
+            {
+                adapter.Close();
+            }
+        }
+
         [TestMethod]
         [TimeoutAttribute(5000)]
         public void Test_SyncInputAcrossDevices_StepByStep()
