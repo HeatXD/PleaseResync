@@ -4,8 +4,6 @@ namespace PleaseResync
     {
         public const int InitialFrame = 0;
         public const int MaxRollbackFrames = 7;
-        public const int FrameAdvantageLimit = 5;
-
         public int SyncFrame;
         public int LocalFrame;
         public int RemoteFrame;
@@ -49,6 +47,11 @@ namespace PleaseResync
         {
             // No need to rollback if we don't have a frame after the previous sync frame to synchronize to.
             return LocalFrame > SyncFrame && RemoteFrame > SyncFrame;
+        }
+
+        public bool PredictionLimitReached()
+        {
+            return LocalFrame >= MaxRollbackFrames && RemoteFrameAdvantage >= MaxRollbackFrames;
         }
     }
 }

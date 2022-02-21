@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Collections.Generic;
+using System;
 
 namespace PleaseResync
 {
@@ -45,6 +46,12 @@ namespace PleaseResync
         {
             _deviceInputs[deviceId] = new InputQueue(_inputSize, playerCount);
         }
+
+        public void UpdateTimeSync() => _timeSync.UpdateTimeSync(_devices);
+
+        public int LocalFrame() => _timeSync.LocalFrame;
+
+        public void IncrementFrame() => _timeSync.LocalFrame++;
 
         public List<SessionAction> AdvanceSync(uint localDeviceId, byte[] deviceInput)
         {
@@ -95,7 +102,7 @@ namespace PleaseResync
             return actions;
         }
 
-        private void SendLocalInputs(uint localDeviceId)
+        public void SendLocalInputs(uint localDeviceId)
         {
             foreach (var device in _devices)
             {
@@ -120,7 +127,13 @@ namespace PleaseResync
             }
         }
 
-        private void UpdateSyncFrame()
+        public StateStorage StateStorage() => _stateStorage;
+
+        public bool ShouldRollback() => _timeSync.ShouldRollback();
+
+        public int SyncFrame() => _timeSync.SyncFrame;
+
+        public void UpdateSyncFrame()
         {
             int finalFrame = _timeSync.RemoteFrame;
             if (_timeSync.RemoteFrame > _timeSync.LocalFrame)
@@ -144,7 +157,7 @@ namespace PleaseResync
                             foundMistake = true;
                         }
                         // remove prediction form queue
-                        input.ResetPrediction(i);
+                        input.ResetPredictions();
                     }
                 }
                 if (foundMistake) break;
@@ -152,11 +165,12 @@ namespace PleaseResync
             _timeSync.SyncFrame = foundFrame;
         }
 
-        private void AddLocalInput(uint deviceId, byte[] deviceInput)
+        public void AddLocalInput(uint deviceId, byte[] deviceInput)
         {
             // only allow adding input to the local device
             Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Local);
-
+            // check if the predictition threshold has been reached. if it has reached the predictition threshold drop the input.
+            Debug.Assert(_timeSync.PredictionLimitReached() == false, "Prediction Limit Reached!");
             AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
         }
 

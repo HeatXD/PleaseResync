@@ -76,9 +76,52 @@ namespace PleaseResync
         public override List<SessionAction> AdvanceFrame(byte[] localInput)
         {
             Debug.Assert(IsRunning(), "Session must be running before calling AdvanceFrame");
+
+            // should be called after polling the remote devices for their messages.
             Debug.Assert(localInput != null);
 
-            return _sync.AdvanceSync(_localDevice.Id, localInput);
+            var actions = new List<SessionAction>();
+
+            // create savestate at the initialFrame to support rolling back to it
+            // for example if initframe = 0 then 0 will be first save option to rollback to.
+            if (_sync.LocalFrame() == TimeSync.InitialFrame)
+            {
+                actions.Add(new SessionSaveGameAction(_sync.LocalFrame(), _sync.StateStorage()));
+            }
+
+            // update time sync variables
+            _sync.UpdateTimeSync();
+
+            // find the first frame where you have all correct inputs of all devices
+            _sync.UpdateSyncFrame();
+
+            // rollback update
+            if (_sync.ShouldRollback())
+            {
+                actions.Add(new SessionLoadGameAction(_sync.SyncFrame(), _sync.StateStorage()));
+                for (int i = _sync.SyncFrame() + 1; i <= _sync.LocalFrame(); i++)
+                {
+                    actions.Add(new SessionAdvanceFrameAction(i, _sync.GetFrameInput(i).Inputs));
+                    actions.Add(new SessionSaveGameAction(i, _sync.StateStorage())); //? later add an less intensive save method? saving every frame might not be needed.
+                }
+            }
+
+            // normal update
+            _sync.IncrementFrame();
+
+            _sync.AddLocalInput(LocalDevice.Id, localInput);
+
+            var game = _sync.GetFrameInput(_sync.LocalFrame());
+
+            actions.Add(new SessionAdvanceFrameAction(_sync.LocalFrame(), game.Inputs));
+            actions.Add(new SessionSaveGameAction(_sync.LocalFrame(), _sync.StateStorage()));
+
+            //send inputs to remote devices 
+            _sync.SendLocalInputs(LocalDevice.Id);
+
+            // Todo Skip Frame Event for the user to implement to keep the game in sync
+
+            return actions;
         }
 
         internal protected override uint SendMessageTo(uint deviceId, DeviceMessage message)
