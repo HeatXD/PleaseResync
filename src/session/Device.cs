@@ -147,7 +147,7 @@ namespace PleaseResync
 
         private void UpdateAckedInputFrame(DeviceInputAckMessage inputAckMessage)
         {
-            if (LastAckedInputFrame + 1 = inputAckMessage.Frame)
+            if (LastAckedInputFrame + 1 == inputAckMessage.Frame)
             {
                 LastAckedInputFrame = inputAckMessage.Frame;
             }
