@@ -99,6 +99,8 @@ namespace PleaseResync
         public void FinishedSyncing()
         {
             State = DeviceState.Running;
+            var ev = new DeviceSyncedEvent { DeviceId = Id };
+            _session.AddSessionEvent(ev);
         }
 
         #endregion

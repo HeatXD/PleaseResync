@@ -98,7 +98,8 @@ namespace PleaseResync
         /// <returns>a list of actions to perform in order before calling AdvanceFrame again</returns>
         public abstract List<SessionAction> AdvanceFrame(byte[] localInput);
 
-        internal protected abstract uint SendMessageTo(uint deviceId, DeviceMessage message);
-        internal protected abstract void AddRemoteInput(uint deviceId, DeviceInputMessage message);
+        protected internal abstract uint SendMessageTo(uint deviceId, DeviceMessage message);
+        protected internal abstract void AddRemoteInput(uint deviceId, DeviceInputMessage message);
+        protected internal abstract void AddSessionEvent(SessionEvent ev);
     }
 }

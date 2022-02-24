@@ -32,9 +32,9 @@ namespace PleaseResync
                 _devices[deviceId].RemoteFrame = frame;
                 _devices[deviceId].RemoteFrameAdvantage = _timeSync.LocalFrame - frame;
             }
-            AddDeviceInput(frame, deviceId, deviceInput);
             // let them know u recieved the packet
             _devices[deviceId].SendMessage(new DeviceInputAckMessage { Frame = (uint)frame });
+            AddDeviceInput(frame, deviceId, deviceInput);
         }
 
         public void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)
@@ -120,7 +120,7 @@ namespace PleaseResync
         {
             // only allow adding input to the local device
             Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Local);
-            // check if the predictition threshold has been reached. if it has reached the predictition threshold drop the input.
+            // check if the predictition threshold has been reached.
             Debug.Assert(_timeSync.PredictionLimitReached() == false, "Prediction Limit Reached!");
             AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
         }

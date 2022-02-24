@@ -138,17 +138,17 @@ namespace PleaseResync
             {
                 _nextSuggestedWait = _sync.LocalFrame() + MinSuggestionTime;
                 var suggestedWait = new WaitSuggestionEvent { Frames = (uint)_sync.FrameAdvantage() };
-                _sessionEvents.Enqueue(suggestedWait);
+                AddSessionEvent(suggestedWait);
             }
         }
 
-        internal protected override uint SendMessageTo(uint deviceId, DeviceMessage message)
+        protected internal override uint SendMessageTo(uint deviceId, DeviceMessage message)
         {
             System.Console.WriteLine($"Sending message to remote device {deviceId}: {message}");
             return _sessionAdapter.SendTo(deviceId, message);
         }
 
-        internal protected override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
+        protected internal override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
         {
 
             uint inputCount = (message.EndFrame - message.StartFrame) + 1;
@@ -171,6 +171,11 @@ namespace PleaseResync
         public override Queue<SessionEvent> Events()
         {
             return _sessionEvents;
+        }
+
+        protected internal override void AddSessionEvent(SessionEvent ev)
+        {
+            _sessionEvents.Enqueue(ev);
         }
     }
 }
