@@ -63,7 +63,7 @@ namespace PleaseResyncTest
             }
         }
 
-        [Ignore]
+        //[Ignore]
         [TestMethod]
         [TimeoutAttribute(5000)]
         public void Test_RollbackSequence()
@@ -81,6 +81,8 @@ namespace PleaseResyncTest
             var session1 = new Peer2PeerSession(INPUT_SIZE, 2, 2, adapter1);
             var session2 = new Peer2PeerSession(INPUT_SIZE, 2, 2, adapter2);
             var sessions = new Peer2PeerSession[] { session1, session2 };
+
+            bool skipSession1, skipSession2;
 
             session1.SetLocalDevice(device1, 1, FRAME_DELAY);
             session1.AddRemoteDevice(device2, 1, UdpSessionAdapter.CreateRemoteConfig(LOCAL_ADDRESS, LOCAL_PORT_2));
@@ -101,13 +103,16 @@ namespace PleaseResyncTest
 
             for (int i = 0; i < 50; i++)
             {
+                skipSession1 = false;
+                skipSession2 = false;
+
                 foreach (var session in sessions)
                 {
                     session.Poll();
                 }
 
-                List<SessionAction> sessionActions1;
-                List<SessionAction> sessionActions2;
+                List<SessionAction> sessionActions1 = null;
+                List<SessionAction> sessionActions2 = null;
 
                 if (i % 4 == 0)
                 {
@@ -117,9 +122,6 @@ namespace PleaseResyncTest
 
                 var sessionEvents1 = session1.Events();
                 var sessionEvents2 = session2.Events();
-
-                sessionActions1 = session1.AdvanceFrame(LastInputP1);
-                sessionActions2 = session2.AdvanceFrame(LastInputP2);
 
                 while (sessionEvents1.Count > 0)
                 {
@@ -131,35 +133,59 @@ namespace PleaseResyncTest
                     Console.WriteLine(sessionEvents2.Dequeue().Desc());
                 }
 
-                foreach (var action in sessionActions1)
+                try
                 {
-                    switch (action)
+                    sessionActions1 = session1.AdvanceFrame(LastInputP1);
+                }
+                catch (System.Exception)
+                {
+                    skipSession1 = true;
+                }
+
+                try
+                {
+                    sessionActions2 = session2.AdvanceFrame(LastInputP2);
+                }
+                catch (System.Exception)
+                {
+                    skipSession2 = true;
+                }
+
+                if (!skipSession1)
+                {
+                    foreach (var action in sessionActions1)
                     {
-                        case SessionAdvanceFrameAction AFAction:
-                            sessionState1.Update(AFAction.Inputs);
-                            break;
-                        case SessionLoadGameAction LGAction:
-                            sessionState1 = MessagePackSerializer.Deserialize<TestHelpers.TestState>(LGAction.Load());
-                            break;
-                        case SessionSaveGameAction SGAction:
-                            SGAction.Save(MessagePackSerializer.Serialize(sessionState1));
-                            break;
+                        switch (action)
+                        {
+                            case SessionAdvanceFrameAction AFAction:
+                                sessionState1.Update(AFAction.Inputs);
+                                break;
+                            case SessionLoadGameAction LGAction:
+                                sessionState1 = MessagePackSerializer.Deserialize<TestHelpers.TestState>(LGAction.Load());
+                                break;
+                            case SessionSaveGameAction SGAction:
+                                SGAction.Save(MessagePackSerializer.Serialize(sessionState1));
+                                break;
+                        }
                     }
                 }
 
-                foreach (var action in sessionActions2)
+                if (!skipSession2)
                 {
-                    switch (action)
+                    foreach (var action in sessionActions2)
                     {
-                        case SessionAdvanceFrameAction AFAction:
-                            sessionState2.Update(AFAction.Inputs);
-                            break;
-                        case SessionLoadGameAction LGAction:
-                            sessionState2 = MessagePackSerializer.Deserialize<TestHelpers.TestState>(LGAction.Load());
-                            break;
-                        case SessionSaveGameAction SGAction:
-                            SGAction.Save(MessagePackSerializer.Serialize(sessionState2));
-                            break;
+                        switch (action)
+                        {
+                            case SessionAdvanceFrameAction AFAction:
+                                sessionState2.Update(AFAction.Inputs);
+                                break;
+                            case SessionLoadGameAction LGAction:
+                                sessionState2 = MessagePackSerializer.Deserialize<TestHelpers.TestState>(LGAction.Load());
+                                break;
+                            case SessionSaveGameAction SGAction:
+                                SGAction.Save(MessagePackSerializer.Serialize(sessionState2));
+                                break;
+                        }
                     }
                 }
             }

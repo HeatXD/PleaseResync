@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Collections.Generic;
-using System;
 
 namespace PleaseResync
 {
@@ -32,7 +31,6 @@ namespace PleaseResync
                 _devices[deviceId].RemoteFrame = frame;
                 _devices[deviceId].RemoteFrameAdvantage = _timeSync.LocalFrame - frame;
             }
-            // let them know u recieved the packet
             _devices[deviceId].SendMessage(new DeviceInputAckMessage { Frame = (uint)frame });
             AddDeviceInput(frame, deviceId, deviceInput);
         }
@@ -121,7 +119,10 @@ namespace PleaseResync
             // only allow adding input to the local device
             Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Local);
             // check if the predictition threshold has been reached.
-            Debug.Assert(_timeSync.PredictionLimitReached() == false, "Prediction Limit Reached!");
+            if (_timeSync.PredictionLimitReached() != false)
+            {
+                throw new PredictionLimitError("Prediction Limit Reached!");
+            }
             AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
         }
 

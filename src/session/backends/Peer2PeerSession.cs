@@ -1,7 +1,6 @@
 using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
-using System;
 
 namespace PleaseResync
 {
@@ -150,7 +149,6 @@ namespace PleaseResync
 
         protected internal override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
         {
-
             uint inputCount = (message.EndFrame - message.StartFrame) + 1;
             uint inputSize = (uint)(message.Input.Length / inputCount);
 
@@ -176,6 +174,10 @@ namespace PleaseResync
         protected internal override void AddSessionEvent(SessionEvent ev)
         {
             _sessionEvents.Enqueue(ev);
+        }
+        public override int FrameAdvantage()
+        {
+            return _sync.FrameAdvantage();
         }
     }
 }

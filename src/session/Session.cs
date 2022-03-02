@@ -88,6 +88,10 @@ namespace PleaseResync
         /// <summary>
         public abstract Queue<SessionEvent> Events();
         /// <summary>
+        /// Returns a number which reports how many frames you are ahead or behind.
+        /// <summary>
+        public virtual int FrameAdvantage() => 0;
+        /// <summary>
         /// IsRunning returns true when all the Sessions are synchronized and ready to accept inputs.
         /// </summary>
         public abstract bool IsRunning();

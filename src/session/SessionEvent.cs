@@ -2,7 +2,7 @@ namespace PleaseResync
 {
     public abstract class SessionEvent
     {
-        public virtual string Desc() => "Base Session Event Class";
+        public abstract string Desc();
     }
 
     public class WaitSuggestionEvent : SessionEvent
@@ -18,9 +18,10 @@ namespace PleaseResync
     public class DeviceSyncedEvent : SessionEvent
     {
         public uint DeviceId;
+
         public override string Desc()
         {
-            return $"Device {DeviceId} Has Been Synced And Ready To Operate";
+            return $"Remote Device {DeviceId} has been synced and ready to operate";
         }
     }
 }
