@@ -41,9 +41,7 @@ namespace PleaseResync
             _inputs = new GameInput[QUEUE_SIZE];
 
             for (int i = 0; i < QUEUE_SIZE; i++)
-            {
                 _inputs[i] = EmptyInput();
-            }
         }
 
         private GameInput EmptyInput(int frame = GameInput.NullFrame)
@@ -98,28 +96,92 @@ namespace PleaseResync
                 {
                     offset = (offset + _tail) % QUEUE_SIZE;
                     Debug.Assert(_inputs[offset].Frame == frame);
-                    return _inputs[offset];
+                    return new GameInput(_inputs[offset]);
                 }
+
+                if (frame == 0 || _lastAddedFrame == GameInput.NullFrame)
+                {
+                    _prediction = EmptyInput(frame);
+                }
+                else
+                {
+                    uint prev = PreviousFrame(_head);
+                    _prediction = new GameInput(_inputs[prev]);
+                }
+                _prediction.Frame += 1;
             }
 
-            return null;
+            Debug.Assert(_prediction.Frame != GameInput.NullFrame);
+
+            var pred = new GameInput(_prediction);
+            pred.Frame = frame;
+
+            return pred;
         }
 
         public int AddInput(GameInput input)
         {
+            // check whether inputs have passed in in the right order
+            Debug.Assert(_lastAddedFrame == GameInput.NullFrame ||
+                input.Frame + _frameDelay == _lastAddedFrame + 1);
 
-            return 0;
+            int frame = ProgressQueueHead(input.Frame);
+
+            if (frame != GameInput.NullFrame)
+                AddInputByFrame(input, frame);
+
+            return frame;
         }
 
-        private void AddInputByFrame()
+        private void AddInputByFrame(GameInput input, int frame)
         {
+            Debug.Assert(_lastAddedFrame == GameInput.NullFrame || frame == _lastAddedFrame + 1);
+            Debug.Assert(frame == 0 || _inputs[PreviousFrame(_head)].Frame == frame - 1);
+            // put input at the end of the queue
+            _inputs[_head] = new GameInput(input);
+            _inputs[_head].Frame = frame;
+            _head = (_head + 1) % QUEUE_SIZE;
+            _length++;
+            // check bounds
+            Debug.Assert(_length <= QUEUE_SIZE);
 
+            _firstFrame = false;
+            _lastAddedFrame = frame;
+            // correct prediction if needed 
+            if (_prediction.Frame != GameInput.NullFrame)
+            {
+                Debug.Assert(frame == _prediction.Frame);
+                // report first bad frame
+                if (_firstBadFrame == GameInput.NullFrame && !_prediction.Equal(input, true))
+                    _firstBadFrame = frame;
+                // either advance in prediction mode or leave it.
+                if (_prediction.Frame == _lastRequestedFrame && _firstBadFrame == GameInput.NullFrame)
+                    _prediction.Frame = GameInput.NullFrame;
+                else
+                    _prediction.Frame++;
+            }
         }
 
-        private int ProgressQueueHead()
+        private int ProgressQueueHead(int frame)
         {
-            return 0;
+            int expFrame = _firstFrame ? 0 : _inputs[PreviousFrame(_head)].Frame + 1;
+            // account for frame delay
+            frame += (int)_frameDelay;
+            // this can happen when the frame delay has decreased since the last time
+            if (expFrame > frame) return GameInput.NullFrame;
+            // this can happen when the frame delay has increased since the last time
+            // be sure to fill the empty space
+            while (expFrame < frame)
+            {
+                var copyInput = new GameInput(_inputs[PreviousFrame(_head)]);
+                AddInputByFrame(copyInput, expFrame);
+                expFrame++;
+            }
+
+            Debug.Assert(frame == 0 || frame == _inputs[PreviousFrame(_head)].Frame + 1);
+            return frame;
         }
+
         private uint PreviousFrame(uint offset) => (((offset) == 0) ? (QUEUE_SIZE - 1) : ((offset) - 1));
     }
 }
