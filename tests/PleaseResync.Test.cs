@@ -8,6 +8,91 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace PleaseResyncTest
 {
     [TestClass]
+    public class PleaseResyncTest_InputQueue
+    {
+        private const uint INPUT_SIZE = 1;
+        private const int INPUT_DELAY = 2;
+
+        [TestMethod]
+        public void Test_InputQueue_FrameDelay()
+        {
+            var queue = new InputQueue(INPUT_SIZE, 1);
+
+            queue.FrameDelay = INPUT_DELAY;
+
+            for (byte i = 0; i < 20; i++)
+            {
+                var input = new GameInput(i, INPUT_SIZE, 1);
+                input.SetInputs(0, 1, new byte[] { i });
+                queue.AddInput(input);
+
+                Assert.IsTrue(queue.LastAddedFrame == i + INPUT_DELAY);
+                Assert.IsTrue(queue.Length == (i + 1 + INPUT_DELAY));
+
+                byte expInput = (byte)Math.Max(0, i - INPUT_DELAY);
+                var gameInput = queue.GetInput(i);
+                Assert.IsTrue(gameInput.Inputs[0] == expInput);
+            }
+        }
+
+        [TestMethod]
+        public void Test_InputQueue_IncorrectFrame()
+        {
+            var queue = new InputQueue(INPUT_SIZE, 1);
+            var input = new GameInput(0, INPUT_SIZE, 1);
+            queue.AddInput(input);
+            var badInput = new GameInput(4, INPUT_SIZE, 1);
+            // should error
+            Assert.ThrowsException<SessionError>(() => queue.AddInput(badInput));
+        }
+
+        [TestMethod]
+        public void Test_InputQueue_SameFrameTwice()
+        {
+            var queue = new InputQueue(INPUT_SIZE, 1);
+            var input = new GameInput(0, INPUT_SIZE, 1);
+            queue.AddInput(input);
+            // should error
+            Assert.ThrowsException<SessionError>(() => queue.AddInput(input));
+        }
+
+        [TestMethod]
+        public void Test_InputQueue_AddInOrder()
+        {
+            var queue = new InputQueue(INPUT_SIZE, 1);
+
+            for (int i = 0; i < 20; i++)
+            {
+                var input = new GameInput(i, INPUT_SIZE, 1);
+                queue.AddInput(input);
+
+                Assert.AreEqual(queue.LastAddedFrame, i);
+                Assert.IsTrue(queue.Length == (i + 1));
+            }
+        }
+
+        [TestMethod]
+        public void Test_InputQueue_GetInOrder()
+        {
+            var queue = new InputQueue(INPUT_SIZE, 1);
+
+            for (byte i = 0; i < 20; i++)
+            {
+                var input = new GameInput(i, INPUT_SIZE, 1);
+                input.SetInputs(0, 1, new byte[] { i });
+                queue.AddInput(input);
+
+                Assert.AreEqual(queue.LastAddedFrame, i);
+                Assert.IsTrue(queue.Length == (i + 1));
+
+                var gameInput = queue.GetInput(i);
+                int expInput = Math.Max(0, i - INPUT_DELAY);
+                Assert.AreEqual(gameInput.Inputs[0], i);
+            }
+        }
+    }
+
+    [TestClass]
     public class PleaseResyncTest_Peer2PeerSession
     {
         private const uint INPUT_SIZE = 2;
@@ -563,7 +648,6 @@ namespace PleaseResyncTest
             }
         }
     }
-
     public static class TestHelpers
     {
         private const uint ITERATIONS = 3;

@@ -27,5 +27,13 @@ namespace PleaseResync
             Array.Copy(array, 0, newArray, 0, array.Length);
             return newArray;
         }
+
+        public static void Assert(bool condition, string message = "")
+        {
+            if (!condition)
+            {
+                throw new SessionError(message);
+            }
+        }
     }
 }

@@ -100,7 +100,7 @@ namespace PleaseResync
             _sync.UpdateTimeSync();
 
             // find the first frame where you have all correct inputs of all devices
-            _sync.UpdateSyncFrame();
+            //            _sync.UpdateSyncFrame();
 
             // rollback update
             if (_sync.ShouldRollback())

@@ -57,7 +57,7 @@ namespace PleaseResync
             {
                 if (device.Type == Device.DeviceType.Remote)
                 {
-                    uint finalFrame = (uint)(_timeSync.LocalFrame + _deviceInputs[localDeviceId].GetFrameDelay());
+                    uint finalFrame = (uint)(_timeSync.LocalFrame + _deviceInputs[localDeviceId].FrameDelay);
 
                     var combinedInput = new List<byte>();
 
@@ -82,37 +82,37 @@ namespace PleaseResync
 
         public int SyncFrame() => _timeSync.SyncFrame;
 
-        public void UpdateSyncFrame()
-        {
-            int finalFrame = _timeSync.RemoteFrame;
-            if (_timeSync.RemoteFrame > _timeSync.LocalFrame)
-            {
-                finalFrame = _timeSync.LocalFrame;
-            }
-            bool foundMistake = false;
-            int foundFrame = finalFrame;
-            for (int i = _timeSync.SyncFrame + 1; i <= finalFrame; i++)
-            {
-                foreach (var input in _deviceInputs)
-                {
-                    var predInput = input.GetPredictedInput(i);
-                    if (predInput.Frame == i &&
-                        input.GetInput(i, false).Frame == i)
-                    {
-                        // Incorrect Prediction
-                        if (!predInput.Equal(input.GetInput(i, false), true))
-                        {
-                            foundFrame = i - 1;
-                            foundMistake = true;
-                        }
-                        // remove prediction form queue
-                        input.ResetPredictions();
-                    }
-                }
-                if (foundMistake) break;
-            }
-            _timeSync.SyncFrame = foundFrame;
-        }
+        // public void UpdateSyncFrame()
+        // {
+        //     int finalFrame = _timeSync.RemoteFrame;
+        //     if (_timeSync.RemoteFrame > _timeSync.LocalFrame)
+        //     {
+        //         finalFrame = _timeSync.LocalFrame;
+        //     }
+        //     bool foundMistake = false;
+        //     int foundFrame = finalFrame;
+        //     for (int i = _timeSync.SyncFrame + 1; i <= finalFrame; i++)
+        //     {
+        //         foreach (var input in _deviceInputs)
+        //         {
+        //             var predInput = input.GetPredictedInput(i);
+        //             if (predInput.Frame == i &&
+        //                 input.GetInput(i, false).Frame == i)
+        //             {
+        //                 // Incorrect Prediction
+        //                 if (!predInput.Equal(input.GetInput(i), true))
+        //                 {
+        //                     foundFrame = i - 1;
+        //                     foundMistake = true;
+        //                 }
+        //                 // remove prediction form queue
+        //                 input.ResetPredictions();
+        //             }
+        //         }
+        //         if (foundMistake) break;
+        //     }
+        //     _timeSync.SyncFrame = foundFrame;
+        // }
 
         public void AddLocalInput(uint deviceId, byte[] deviceInput)
         {
@@ -134,7 +134,7 @@ namespace PleaseResync
             var input = new GameInput(frame, _inputSize, _devices[deviceId].PlayerCount);
             input.SetInputs(0, _devices[deviceId].PlayerCount, deviceInput);
 
-            _deviceInputs[deviceId].AddInput(frame, input);
+            _deviceInputs[deviceId].AddInput(input);
         }
 
         private GameInput GetDeviceInput(int frame, uint deviceId)
