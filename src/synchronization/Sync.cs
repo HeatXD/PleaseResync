@@ -69,7 +69,7 @@ namespace PleaseResync
             {
                 actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
             }
-            
+
             // rollback update
             if (_timeSync.ShouldRollback())
             {
@@ -85,7 +85,7 @@ namespace PleaseResync
             {
                 _timeSync.LocalFrame++;
 
-                AddLocalInput(localDeviceId, deviceInput, isTimeSynced);
+                AddLocalInput(localDeviceId, deviceInput);
                 SendLocalInputs(localDeviceId);
 
                 actions.Add(new SessionAdvanceFrameAction(_timeSync.LocalFrame, GetFrameInput(_timeSync.LocalFrame).Inputs));
@@ -152,17 +152,13 @@ namespace PleaseResync
             _timeSync.SyncFrame = foundFrame;
         }
 
-        private void AddLocalInput(uint deviceId, byte[] deviceInput, bool isTimeSynced)
+        private void AddLocalInput(uint deviceId, byte[] deviceInput)
         {
             // only allow adding input to the local device
             Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Local);
-            if(isTimeSynced){
-                AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
-            }else{
-                throw new System.Exception("PredictionThreshold has been reached");
-            }
+            AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
         }
-
+        
         private void AddDeviceInput(int frame, uint deviceId, byte[] deviceInput)
         {
             Debug.Assert(deviceInput.Length == _devices[deviceId].PlayerCount * _inputSize,

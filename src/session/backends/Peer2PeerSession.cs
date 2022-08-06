@@ -25,7 +25,6 @@ namespace PleaseResync
             _sync = new Sync(_allDevices, inputSize);
         }
 
-        public override uint FramesAhead() => _sync.FramesAhead();
         public override void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)
         {
             Debug.Assert(deviceId >= 0 && deviceId < DeviceCount, $"DeviceId {deviceId} should be between [0,  {DeviceCount}[");
@@ -78,6 +77,7 @@ namespace PleaseResync
         {
             Debug.Assert(IsRunning(), "Session must be running before calling AdvanceFrame");
             Debug.Assert(localInput != null);
+
             Poll();
             return _sync.AdvanceSync(_localDevice.Id, localInput);
         }
