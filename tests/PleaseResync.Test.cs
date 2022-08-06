@@ -156,6 +156,7 @@ namespace PleaseResyncTest
             }
         }
 
+        [Ignore]
         [TestMethod]
         [TimeoutAttribute(5000)]
         public void Test_SyncInputAcrossDevices_StepByStep()
@@ -485,7 +486,7 @@ namespace PleaseResyncTest
             }, inputs2.Skip(0).Take((int)(/* steps */ 6 * (INPUT_SIZE * /* device count */ 2))).ToArray());
 
             // give a chance to remote inputs to flow from one session to another
-            TestHelpers.PollSessions(sessions);
+             
 
             // irregular poll/advance sync cycle
             accumulateInputs(inputs1, session1.AdvanceFrame(new byte[] { 0, 8 }));

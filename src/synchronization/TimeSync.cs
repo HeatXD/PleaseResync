@@ -4,19 +4,19 @@ namespace PleaseResync
     {
         public const int InitialFrame = 0;
         public const int MaxRollbackFrames = 7;
-        public const int FrameAdvantageLimit = 5;
-
+        public const int FrameAdvLimit = 4;
         public int SyncFrame;
         public int LocalFrame;
         public int RemoteFrame;
         public int RemoteFrameAdvantage;
-
+        public int LocalFrameAdvantage;
         public TimeSync()
         {
             SyncFrame = InitialFrame;
             LocalFrame = InitialFrame;
             RemoteFrame = InitialFrame;
             RemoteFrameAdvantage = 0;
+            LocalFrameAdvantage = 0;
         }
 
         public bool IsTimeSynced(Device[] devices)
@@ -44,11 +44,10 @@ namespace PleaseResync
             RemoteFrame = minRemoteFrame;
             RemoteFrameAdvantage = maxRemoteFrameAdvantage;
             // How far the client is ahead of the last reported frame by the remote clients           
-            int localFrameAdvantage = LocalFrame - RemoteFrame;
-            // How different is the frame advantage reported by the remote clients and this one
-            int frameAdvantageDiff = localFrameAdvantage - RemoteFrameAdvantage;
+            LocalFrameAdvantage = LocalFrame - RemoteFrame;
+            int frameAdvDiff = LocalFrameAdvantage - RemoteFrameAdvantage;
             // Only allow the local client to get so far ahead of remote.
-            return localFrameAdvantage < MaxRollbackFrames && frameAdvantageDiff <= FrameAdvantageLimit;
+            return LocalFrameAdvantage < MaxRollbackFrames && frameAdvDiff <= FrameAdvLimit ;
         }
 
         public bool ShouldRollback()

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Collections.Generic;
+using System;
 
 namespace PleaseResync
 {
@@ -36,6 +37,11 @@ namespace PleaseResync
             AddDeviceInput(frame, deviceId, deviceInput);
         }
 
+        public uint FramesAhead()
+        {
+            return (uint)_timeSync.LocalFrameAdvantage;
+        }
+
         public void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)
         {
             _deviceInputs[deviceId] = new InputQueue(_inputSize, playerCount, frameDelay);
@@ -56,38 +62,34 @@ namespace PleaseResync
             UpdateSyncFrame();
 
             var actions = new List<SessionAction>();
+
+            // create savestate at the initialFrame to support rolling back to it
+            // for example if initframe = 0 then 0 will be first save option to rollback to.
+            if (_timeSync.LocalFrame == TimeSync.InitialFrame)
+            {
+                actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
+            }
+            
             // rollback update
             if (_timeSync.ShouldRollback())
             {
                 actions.Add(new SessionLoadGameAction(_timeSync.SyncFrame, _stateStorage));
                 for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
                 {
-                    var game = GetFrameInput(i);
-
-                    actions.Add(new SessionAdvanceFrameAction(i, game.Inputs));
+                    actions.Add(new SessionAdvanceFrameAction(i, GetFrameInput(i).Inputs));
                     actions.Add(new SessionSaveGameAction(i, _stateStorage));
                 }
             }
-            // normal update
+
             if (isTimeSynced)
             {
-                // create savestate at the initialFrame to support rolling back to it
-                // for example if initframe = 0 then 0 will be first save option to rollback to.
-                if (_timeSync.LocalFrame == TimeSync.InitialFrame)
-                {
-                    actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
-                }
-
                 _timeSync.LocalFrame++;
 
-                AddLocalInput(localDeviceId, deviceInput);
-
+                AddLocalInput(localDeviceId, deviceInput, isTimeSynced);
                 SendLocalInputs(localDeviceId);
 
-                var game = GetFrameInput(_timeSync.LocalFrame);
-
-                actions.Add(new SessionAdvanceFrameAction(_timeSync.LocalFrame, game.Inputs));
-                actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
+                actions.Add(new SessionAdvanceFrameAction(_timeSync.LocalFrame, GetFrameInput(_timeSync.LocalFrame).Inputs));
+                actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));   
             }
 
             return actions;
@@ -150,12 +152,15 @@ namespace PleaseResync
             _timeSync.SyncFrame = foundFrame;
         }
 
-        private void AddLocalInput(uint deviceId, byte[] deviceInput)
+        private void AddLocalInput(uint deviceId, byte[] deviceInput, bool isTimeSynced)
         {
             // only allow adding input to the local device
             Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Local);
-
-            AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
+            if(isTimeSynced){
+                AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
+            }else{
+                throw new System.Exception("PredictionThreshold has been reached");
+            }
         }
 
         private void AddDeviceInput(int frame, uint deviceId, byte[] deviceInput)
