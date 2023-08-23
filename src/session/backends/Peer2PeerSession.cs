@@ -1,7 +1,6 @@
 using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
-using System;
 
 namespace PleaseResync
 {
@@ -19,18 +18,11 @@ namespace PleaseResync
         private Sync _sync;
         private Device _localDevice;
 
-        // events
-        private const int MinSuggestionTime = 3;
-        private Queue<SessionEvent> _sessionEvents;
-        private int _nextSuggestedWait;
-
         public Peer2PeerSession(uint inputSize, uint deviceCount, uint totalPlayerCount, SessionAdapter adapter) : base(inputSize, deviceCount, totalPlayerCount)
         {
             _allDevices = new Device[deviceCount];
             _sessionAdapter = adapter;
             _sync = new Sync(_allDevices, inputSize);
-            _nextSuggestedWait = 0;
-            _sessionEvents = new Queue<SessionEvent>(32);
         }
 
         public override void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)
@@ -84,71 +76,19 @@ namespace PleaseResync
         public override List<SessionAction> AdvanceFrame(byte[] localInput)
         {
             Debug.Assert(IsRunning(), "Session must be running before calling AdvanceFrame");
-
-            // should be called after polling the remote devices for their messages.
             Debug.Assert(localInput != null);
 
-            var actions = new List<SessionAction>();
-
-            // create savestate at the initialFrame to support rolling back to it
-            // for example if initframe = 0 then 0 will be first save option to rollback to.
-            if (_sync.LocalFrame() == TimeSync.InitialFrame)
-            {
-                actions.Add(new SessionSaveGameAction(_sync.LocalFrame(), _sync.StateStorage()));
-            }
-
-            // update time sync variables
-            _sync.UpdateTimeSync();
-
-            // find the first frame where you have all correct inputs of all devices
-            _sync.UpdateSyncFrame();
-
-            // rollback update
-            if (_sync.ShouldRollback())
-            {
-                actions.Add(new SessionLoadGameAction(_sync.SyncFrame(), _sync.StateStorage()));
-                for (int i = _sync.SyncFrame() + 1; i <= _sync.LocalFrame(); i++)
-                {
-                    actions.Add(new SessionAdvanceFrameAction(i, _sync.GetFrameInput(i).Inputs));
-                    actions.Add(new SessionSaveGameAction(i, _sync.StateStorage())); //? later add an less intensive save method? saving every frame might not be needed.
-                }
-            }
-
-            // normal update
-            _sync.IncrementFrame();
-
-            _sync.AddLocalInput(LocalDevice.Id, localInput);
-
-            var game = _sync.GetFrameInput(_sync.LocalFrame());
-
-            actions.Add(new SessionAdvanceFrameAction(_sync.LocalFrame(), game.Inputs));
-            actions.Add(new SessionSaveGameAction(_sync.LocalFrame(), _sync.StateStorage()));
-
-            //send inputs to remote devices 
-            _sync.SendLocalInputs(LocalDevice.Id);
-
-            CheckWaitSuggestion();
-
-            return actions;
+            Poll();
+            return _sync.AdvanceSync(_localDevice.Id, localInput);
         }
 
-        private void CheckWaitSuggestion()
-        {
-            if (_sync.LocalFrame() > _nextSuggestedWait && _sync.FrameAdvantage() >= MinSuggestionTime)
-            {
-                _nextSuggestedWait = _sync.LocalFrame() + MinSuggestionTime;
-                var suggestedWait = new WaitSuggestionEvent { Frames = (uint)_sync.FrameAdvantage() };
-                AddSessionEvent(suggestedWait);
-            }
-        }
-
-        protected internal override uint SendMessageTo(uint deviceId, DeviceMessage message)
+        internal protected override uint SendMessageTo(uint deviceId, DeviceMessage message)
         {
             System.Console.WriteLine($"Sending message to remote device {deviceId}: {message}");
             return _sessionAdapter.SendTo(deviceId, message);
         }
 
-        protected internal override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
+        internal protected override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
         {
 
             uint inputCount = (message.EndFrame - message.StartFrame) + 1;
@@ -166,16 +106,6 @@ namespace PleaseResync
 
                 inputIndex++;
             }
-        }
-
-        public override Queue<SessionEvent> Events()
-        {
-            return _sessionEvents;
-        }
-
-        protected internal override void AddSessionEvent(SessionEvent ev)
-        {
-            _sessionEvents.Enqueue(ev);
         }
     }
 }

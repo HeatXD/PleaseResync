@@ -84,10 +84,6 @@ namespace PleaseResync
         /// </summary>
         public abstract void Poll();
         /// <summary>
-        /// Returns a queue with all the events that happend since the last call to this function.
-        /// <summary>
-        public abstract Queue<SessionEvent> Events();
-        /// <summary>
         /// IsRunning returns true when all the Sessions are synchronized and ready to accept inputs.
         /// </summary>
         public abstract bool IsRunning();
@@ -97,9 +93,7 @@ namespace PleaseResync
         /// <param name="localInput">the local device input for the current frame</param>
         /// <returns>a list of actions to perform in order before calling AdvanceFrame again</returns>
         public abstract List<SessionAction> AdvanceFrame(byte[] localInput);
-
-        protected internal abstract uint SendMessageTo(uint deviceId, DeviceMessage message);
-        protected internal abstract void AddRemoteInput(uint deviceId, DeviceInputMessage message);
-        protected internal abstract void AddSessionEvent(SessionEvent ev);
+        internal protected abstract uint SendMessageTo(uint deviceId, DeviceMessage message);
+        internal protected abstract void AddRemoteInput(uint deviceId, DeviceInputMessage message);
     }
 }

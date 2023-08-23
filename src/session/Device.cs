@@ -100,7 +100,7 @@ namespace PleaseResync
         {
             State = DeviceState.Running;
             var ev = new DeviceSyncedEvent { DeviceId = Id };
-            _session.AddSessionEvent(ev);
+            //_session.AddSessionEvent(ev);
         }
 
         #endregion
@@ -140,9 +140,10 @@ namespace PleaseResync
                     break;
                 case DeviceInputMessage inputMessage:
                     _session.AddRemoteInput(Id, inputMessage);
+                    LastAckedInputFrame = inputMessage.EndFrame; //Getting the acked frame from the input message
                     break;
                 case DeviceInputAckMessage inputAckMessage:
-                    UpdateAckedInputFrame(inputAckMessage);
+                    //UpdateAckedInputFrame(inputAckMessage); //Removed for now
                     break;
             }
         }
