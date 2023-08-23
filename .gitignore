@@ -6,3 +6,4 @@ perfs/bin
 perfs/obj
 perfs/BenchmarkDotNet.Artifacts
 .vscode
+/.vs
