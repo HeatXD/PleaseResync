@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Collections.Generic;
 using System;
 
@@ -31,10 +31,15 @@ namespace PleaseResync
             {
                 _devices[deviceId].RemoteFrame = frame;
                 _devices[deviceId].RemoteFrameAdvantage = _timeSync.LocalFrame - frame;
+                // let them know u recieved the packet
+                _devices[deviceId].SendMessage(new DeviceInputAckMessage { Frame = (uint)frame });
             }
-            // let them know u recieved the packet
-            _devices[deviceId].SendMessage(new DeviceInputAckMessage { Frame = (uint)frame });
             AddDeviceInput(frame, deviceId, deviceInput);
+        }
+
+        public uint FramesAhead()
+        {
+            return (uint)_timeSync.LocalFrameAdvantage;
         }
 
         public void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)
@@ -47,11 +52,48 @@ namespace PleaseResync
             _deviceInputs[deviceId] = new InputQueue(_inputSize, playerCount);
         }
 
-        public void UpdateTimeSync() => _timeSync.UpdateTimeSync(_devices);
+        public List<SessionAction> AdvanceSync(uint localDeviceId, byte[] deviceInput)
+        {
+            // should be called after polling the remote devices for their messages.
+            Debug.Assert(deviceInput != null);
 
-        public int LocalFrame() => _timeSync.LocalFrame;
+            bool isTimeSynced = _timeSync.IsTimeSynced(_devices);
 
-        public void IncrementFrame() => _timeSync.LocalFrame++;
+            UpdateSyncFrame();
+
+            var actions = new List<SessionAction>();
+
+            // create savestate at the initialFrame to support rolling back to it
+            // for example if initframe = 0 then 0 will be first save option to rollback to.
+            if (_timeSync.LocalFrame == TimeSync.InitialFrame)
+            {
+                actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
+            }
+
+            // rollback update
+            if (_timeSync.ShouldRollback())
+            {
+                actions.Add(new SessionLoadGameAction(_timeSync.SyncFrame, _stateStorage));
+                for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
+                {
+                    actions.Add(new SessionAdvanceFrameAction(i, GetFrameInput(i).Inputs));
+                    actions.Add(new SessionSaveGameAction(i, _stateStorage));
+                }
+            }
+
+            if (isTimeSynced)
+            {
+                _timeSync.LocalFrame++;
+
+                AddLocalInput(localDeviceId, deviceInput);
+                SendLocalInputs(localDeviceId);
+
+                actions.Add(new SessionAdvanceFrameAction(_timeSync.LocalFrame, GetFrameInput(_timeSync.LocalFrame).Inputs));
+                actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
+            }
+
+            return actions;
+        }
 
         public void SendLocalInputs(uint localDeviceId)
         {
@@ -78,13 +120,7 @@ namespace PleaseResync
             }
         }
 
-        public StateStorage StateStorage() => _stateStorage;
-
-        public bool ShouldRollback() => _timeSync.ShouldRollback();
-
-        public int SyncFrame() => _timeSync.SyncFrame;
-
-        public void UpdateSyncFrame()
+        private void UpdateSyncFrame()
         {
             int finalFrame = _timeSync.RemoteFrame;
             if (_timeSync.RemoteFrame > _timeSync.LocalFrame)
@@ -108,7 +144,7 @@ namespace PleaseResync
                             foundMistake = true;
                         }
                         // remove prediction form queue
-                        input.ResetPredictions();
+                        input.ResetPrediction(i);
                     }
                 }
                 if (foundMistake) break;
@@ -116,12 +152,10 @@ namespace PleaseResync
             _timeSync.SyncFrame = foundFrame;
         }
 
-        public void AddLocalInput(uint deviceId, byte[] deviceInput)
+        private void AddLocalInput(uint deviceId, byte[] deviceInput)
         {
             // only allow adding input to the local device
             Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Local);
-            // check if the predictition threshold has been reached.
-            Debug.Assert(_timeSync.PredictionLimitReached() == false, "Prediction Limit Reached!");
             AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
         }
 
@@ -163,6 +197,8 @@ namespace PleaseResync
             return input;
         }
 
-        public int FrameAdvantage() => _timeSync.FrameAdvantage;
+        internal int LocalFrame() => _timeSync.LocalFrame;
+
+        internal int LocalFrameAdvantage() => _timeSync.LocalFrameAdvantage;
     }
 }

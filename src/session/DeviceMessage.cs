@@ -1,4 +1,4 @@
-using MessagePack;
+﻿using MessagePack;
 
 namespace PleaseResync
 {
@@ -10,7 +10,7 @@ namespace PleaseResync
     public abstract class DeviceMessage
     {
         [Key(0)]
-        public uint SequenceNumber;
+        public uint SequenceNumber; // currently unused // TODO
     }
 
     [MessagePackObject]

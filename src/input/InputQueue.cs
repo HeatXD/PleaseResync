@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace PleaseResync
 {
@@ -25,10 +25,12 @@ namespace PleaseResync
                 _lastPredictedInputs[i] = EmptyInput();
             }
         }
+
         public GameInput EmptyInput()
         {
             return new GameInput(GameInput.NullFrame, _inputSize, _playerCount);
         }
+
         public GameInput GetPredictedInput(int frame)
         {
             return _lastPredictedInputs[frame % QueueSize];
@@ -70,14 +72,11 @@ namespace PleaseResync
             return new GameInput(_inputs[frameOffset]);
         }
 
-        public void ResetPredictions()
+        public void ResetPrediction(int frame)
         {
             // when resetting the prediction we just make the frame a null frame.
-            // TODO MAKE A BETTER PREDDICTION SYSTEM.
-            for (int i = 0; i < QueueSize; i++)
-            {
-                _lastPredictedInputs[i].Frame = GameInput.NullFrame;
-            }
+            int frameOffset = frame % QueueSize;
+            _lastPredictedInputs[frameOffset].Frame = GameInput.NullFrame;
         }
 
         private int PreviousFrame(int offset) => (((offset) == 0) ? (QueueSize - 1) : ((offset) - 1));

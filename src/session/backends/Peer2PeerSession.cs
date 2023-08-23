@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System;
@@ -88,45 +88,9 @@ namespace PleaseResync
             // should be called after polling the remote devices for their messages.
             Debug.Assert(localInput != null);
 
-            var actions = new List<SessionAction>();
+            Poll();
 
-            // create savestate at the initialFrame to support rolling back to it
-            // for example if initframe = 0 then 0 will be first save option to rollback to.
-            if (_sync.LocalFrame() == TimeSync.InitialFrame)
-            {
-                actions.Add(new SessionSaveGameAction(_sync.LocalFrame(), _sync.StateStorage()));
-            }
-
-            // update time sync variables
-            _sync.UpdateTimeSync();
-
-            // find the first frame where you have all correct inputs of all devices
-            _sync.UpdateSyncFrame();
-
-            // rollback update
-            if (_sync.ShouldRollback())
-            {
-                actions.Add(new SessionLoadGameAction(_sync.SyncFrame(), _sync.StateStorage()));
-                for (int i = _sync.SyncFrame() + 1; i <= _sync.LocalFrame(); i++)
-                {
-                    actions.Add(new SessionAdvanceFrameAction(i, _sync.GetFrameInput(i).Inputs));
-                    actions.Add(new SessionSaveGameAction(i, _sync.StateStorage())); //? later add an less intensive save method? saving every frame might not be needed.
-                }
-            }
-
-            // normal update
-            _sync.IncrementFrame();
-
-            _sync.AddLocalInput(LocalDevice.Id, localInput);
-
-            var game = _sync.GetFrameInput(_sync.LocalFrame());
-
-            actions.Add(new SessionAdvanceFrameAction(_sync.LocalFrame(), game.Inputs));
-            actions.Add(new SessionSaveGameAction(_sync.LocalFrame(), _sync.StateStorage()));
-
-            //send inputs to remote devices 
-            _sync.SendLocalInputs(LocalDevice.Id);
-
+            var actions = _sync.AdvanceSync(_localDevice.Id, localInput);
             CheckWaitSuggestion();
 
             return actions;
@@ -134,10 +98,10 @@ namespace PleaseResync
 
         private void CheckWaitSuggestion()
         {
-            if (_sync.LocalFrame() > _nextSuggestedWait && _sync.FrameAdvantage() >= MinSuggestionTime)
+            if (_sync.LocalFrame() > _nextSuggestedWait && _sync.LocalFrameAdvantage() >= MinSuggestionTime)
             {
                 _nextSuggestedWait = _sync.LocalFrame() + MinSuggestionTime;
-                var suggestedWait = new WaitSuggestionEvent { Frames = (uint)_sync.FrameAdvantage() };
+                var suggestedWait = new WaitSuggestionEvent { Frames = (uint)_sync.LocalFrameAdvantage() };
                 AddSessionEvent(suggestedWait);
             }
         }
