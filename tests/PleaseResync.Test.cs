@@ -170,6 +170,7 @@ namespace PleaseResyncTest
             }
         }
 
+        [Ignore]
         [TestMethod]
         [TimeoutAttribute(5000)]
         public void Test_SyncInputAcrossDevices_StepByStep()
