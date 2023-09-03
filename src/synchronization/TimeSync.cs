@@ -1,4 +1,4 @@
-namespace PleaseResync
+﻿namespace PleaseResync
 {
     internal class TimeSync
     {
@@ -47,7 +47,7 @@ namespace PleaseResync
             LocalFrameAdvantage = LocalFrame - RemoteFrame;
             int frameAdvDiff = LocalFrameAdvantage - RemoteFrameAdvantage;
             // Only allow the local client to get so far ahead of remote.
-            return LocalFrameAdvantage < MaxRollbackFrames && frameAdvDiff <= FrameAdvLimit ;
+            return LocalFrameAdvantage < MaxRollbackFrames && frameAdvDiff <= FrameAdvLimit;
         }
 
         public bool ShouldRollback()

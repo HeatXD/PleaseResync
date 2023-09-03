@@ -1,6 +1,7 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System;
 
 namespace PleaseResync
 {
@@ -18,11 +19,18 @@ namespace PleaseResync
         private Sync _sync;
         private Device _localDevice;
 
+        // events
+        private const int MinSuggestionTime = 3;
+        private Queue<SessionEvent> _sessionEvents;
+        private int _nextSuggestedWait;
+
         public Peer2PeerSession(uint inputSize, uint deviceCount, uint totalPlayerCount, SessionAdapter adapter) : base(inputSize, deviceCount, totalPlayerCount)
         {
             _allDevices = new Device[deviceCount];
             _sessionAdapter = adapter;
             _sync = new Sync(_allDevices, inputSize);
+            _nextSuggestedWait = 0;
+            _sessionEvents = new Queue<SessionEvent>(32);
         }
 
         public override void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)
@@ -76,19 +84,35 @@ namespace PleaseResync
         public override List<SessionAction> AdvanceFrame(byte[] localInput)
         {
             Debug.Assert(IsRunning(), "Session must be running before calling AdvanceFrame");
+
+            // should be called after polling the remote devices for their messages.
             Debug.Assert(localInput != null);
 
             Poll();
-            return _sync.AdvanceSync(_localDevice.Id, localInput);
+
+            var actions = _sync.AdvanceSync(_localDevice.Id, localInput);
+            CheckWaitSuggestion();
+
+            return actions;
         }
 
-        internal protected override uint SendMessageTo(uint deviceId, DeviceMessage message)
+        private void CheckWaitSuggestion()
+        {
+            if (_sync.LocalFrame() > _nextSuggestedWait && _sync.LocalFrameAdvantage() >= MinSuggestionTime)
+            {
+                _nextSuggestedWait = _sync.LocalFrame() + MinSuggestionTime;
+                var suggestedWait = new WaitSuggestionEvent { Frames = (uint)_sync.LocalFrameAdvantage() };
+                AddSessionEvent(suggestedWait);
+            }
+        }
+
+        protected internal override uint SendMessageTo(uint deviceId, DeviceMessage message)
         {
             System.Console.WriteLine($"Sending message to remote device {deviceId}: {message}");
             return _sessionAdapter.SendTo(deviceId, message);
         }
 
-        internal protected override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
+        protected internal override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
         {
 
             uint inputCount = (message.EndFrame - message.StartFrame) + 1;
@@ -106,6 +130,16 @@ namespace PleaseResync
 
                 inputIndex++;
             }
+        }
+
+        public override Queue<SessionEvent> Events()
+        {
+            return _sessionEvents;
+        }
+
+        protected internal override void AddSessionEvent(SessionEvent ev)
+        {
+            _sessionEvents.Enqueue(ev);
         }
     }
 }

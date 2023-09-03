@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Collections.Generic;
 using System;
 
@@ -100,7 +100,7 @@ namespace PleaseResync
         {
             State = DeviceState.Running;
             var ev = new DeviceSyncedEvent { DeviceId = Id };
-            //_session.AddSessionEvent(ev);
+            _session.AddSessionEvent(ev);
         }
 
         #endregion
@@ -140,10 +140,14 @@ namespace PleaseResync
                     break;
                 case DeviceInputMessage inputMessage:
                     _session.AddRemoteInput(Id, inputMessage);
-                    LastAckedInputFrame = inputMessage.EndFrame; //Getting the acked frame from the input message
+                    for (uint i = inputMessage.StartFrame; i <= inputMessage.EndFrame; i++)
+                    {
+                        if (LastAckedInputFrame + 1 == i)
+                            LastAckedInputFrame = i;
+                    }
                     break;
                 case DeviceInputAckMessage inputAckMessage:
-                    //UpdateAckedInputFrame(inputAckMessage); //Removed for now
+                    UpdateAckedInputFrame(inputAckMessage);
                     break;
             }
         }

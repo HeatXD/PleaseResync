@@ -89,33 +89,30 @@ namespace PleaseResync
                 SendLocalInputs(localDeviceId);
 
                 actions.Add(new SessionAdvanceFrameAction(_timeSync.LocalFrame, GetFrameInput(_timeSync.LocalFrame).Inputs));
-                actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));   
+                actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
             }
 
             return actions;
         }
 
-        private void SendLocalInputs(uint localDeviceId)
+        public void SendLocalInputs(uint localDeviceId)
         {
             foreach (var device in _devices)
             {
                 if (device.Type == Device.DeviceType.Remote)
                 {
-                    //Using a somewhat fixed value for the starting frame to compensate packet loss
-                    //8 is kind of a magic number... TODO: replace it for something more optimized
-                    uint startingFrame = _timeSync.LocalFrame <= 8 ? 0 : (uint)_timeSync.LocalFrame - 8;
                     uint finalFrame = (uint)(_timeSync.LocalFrame + _deviceInputs[localDeviceId].GetFrameDelay());
 
                     var combinedInput = new List<byte>();
 
-                    for (uint i = startingFrame; i <= finalFrame; i++)
+                    for (uint i = device.LastAckedInputFrame; i <= finalFrame; i++)
                     {
                         combinedInput.AddRange(GetDeviceInput((int)i, localDeviceId).Inputs);
                     }
 
                     device.SendMessage(new DeviceInputMessage
                     {
-                        StartFrame = startingFrame,
+                        StartFrame = device.LastAckedInputFrame,
                         EndFrame = finalFrame,
                         Input = combinedInput.ToArray()
                     });
@@ -161,7 +158,7 @@ namespace PleaseResync
             Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Local);
             AddDeviceInput(_timeSync.LocalFrame, deviceId, deviceInput);
         }
-        
+
         private void AddDeviceInput(int frame, uint deviceId, byte[] deviceInput)
         {
             Debug.Assert(deviceInput.Length == _devices[deviceId].PlayerCount * _inputSize,
@@ -199,5 +196,9 @@ namespace PleaseResync
             }
             return input;
         }
+
+        internal int LocalFrame() => _timeSync.LocalFrame;
+
+        internal int LocalFrameAdvantage() => _timeSync.LocalFrameAdvantage;
     }
 }
