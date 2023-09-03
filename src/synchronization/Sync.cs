@@ -95,24 +95,27 @@ namespace PleaseResync
             return actions;
         }
 
-        public void SendLocalInputs(uint localDeviceId)
+        private void SendLocalInputs(uint localDeviceId)
         {
             foreach (var device in _devices)
             {
                 if (device.Type == Device.DeviceType.Remote)
                 {
+                    //Using a somewhat fixed value for the starting frame to compensate packet loss
+                    //8 is kind of a magic number... TODO: replace it for something more optimized
+                    uint startingFrame = _timeSync.LocalFrame <= 8 ? 0 : (uint)_timeSync.LocalFrame - 8;
                     uint finalFrame = (uint)(_timeSync.LocalFrame + _deviceInputs[localDeviceId].GetFrameDelay());
 
                     var combinedInput = new List<byte>();
 
-                    for (uint i = device.LastAckedInputFrame; i <= finalFrame; i++)
+                    for (uint i = startingFrame; i <= finalFrame; i++)
                     {
                         combinedInput.AddRange(GetDeviceInput((int)i, localDeviceId).Inputs);
                     }
 
                     device.SendMessage(new DeviceInputMessage
                     {
-                        StartFrame = device.LastAckedInputFrame,
+                        StartFrame = startingFrame,
                         EndFrame = finalFrame,
                         Input = combinedInput.ToArray()
                     });
