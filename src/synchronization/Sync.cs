@@ -252,7 +252,7 @@ namespace PleaseResync
                     {
                         StartFrame = startingFrame,
                         EndFrame = finalFrame,
-                        Advantage = _timeSync.LocalFrameAdvantage,
+                        Advantage = (uint)_timeSync.LocalFrameAdvantage,
                         Input = combinedInput.ToArray()
                     });
                 }
