@@ -1,6 +1,6 @@
 using System;
+using System.IO;
 using System.Net;
-using MessagePack;
 using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -12,7 +12,7 @@ namespace PleaseResync
         private const int SIO_UDP_CONNRESET = -1744830452;
 
         private readonly UdpClient _udpClient;
-        private readonly IPEndPoint[] _remoteEndpoints;
+        private readonly Dictionary<uint, IPEndPoint> _remoteEndpoints = new Dictionary<uint, IPEndPoint>();
 
         private IPEndPoint _remoteReceiveEndpoint;
 
@@ -26,7 +26,7 @@ namespace PleaseResync
             }
             _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             _udpClient.Client.Bind(endpoint);
-            _remoteEndpoints = new IPEndPoint[Session.LIMIT_DEVICE_COUNT];
+            _remoteEndpoints = new Dictionary<uint, IPEndPoint>();
             _remoteReceiveEndpoint = default(IPEndPoint);
         }
 
@@ -40,7 +40,10 @@ namespace PleaseResync
 
         public uint SendTo(uint deviceId, DeviceMessage message)
         {
-            var packet = MessagePackSerializer.Serialize(message);
+            MemoryStream writerStream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(writerStream);
+            message.Serialize(writer);
+            var packet = writerStream.ToArray();
             return (uint)_udpClient.Send(packet, packet.Length, _remoteEndpoints[deviceId]);
         }
 
@@ -50,8 +53,10 @@ namespace PleaseResync
             if (_udpClient.Available > 0)
             {
                 var packet = _udpClient.Receive(ref _remoteReceiveEndpoint);
-                var message = MessagePackSerializer.Deserialize<DeviceMessage>(packet);
-                messages.Add(((uint)packet.Length, FindDeviceIdFromEndpoint(_remoteReceiveEndpoint), message));
+                MemoryStream readerStream = new MemoryStream(packet);
+                BinaryReader reader = new BinaryReader(readerStream);
+                var tempMessage = GetMessageType(reader);
+                messages.Add(((uint)packet.Length, FindDeviceIdFromEndpoint(_remoteReceiveEndpoint), tempMessage));
             }
             return messages;
         }
@@ -70,7 +75,7 @@ namespace PleaseResync
 
         private uint FindDeviceIdFromEndpoint(IPEndPoint endpoint)
         {
-            for (uint deviceId = 0; deviceId < _remoteEndpoints.Length; deviceId++)
+            for (uint deviceId = 0; deviceId < _remoteEndpoints.Count; deviceId++)
             {
                 if (endpoint.Equals(_remoteEndpoints[deviceId]))
                 {
@@ -104,5 +109,35 @@ namespace PleaseResync
         }
 
         #endregion
+
+        //Get message type for the new serialization method
+        public DeviceMessage GetMessageType(BinaryReader br)
+        {
+            DeviceMessage finalMessage = null;
+            uint ID = br.ReadUInt32();
+            switch(ID)
+            {
+                case 1:
+                    finalMessage = new DeviceSyncMessage(br);
+                    break;
+                case 2:
+                    finalMessage = new DeviceSyncConfirmMessage(br);
+                    break;
+                case 3:
+                    finalMessage = new DeviceInputMessage(br);
+                    break;
+                case 4:
+                    finalMessage = new DeviceInputAckMessage(br);
+                    break;
+                case 5:
+                    finalMessage = new HealthCheckMessage(br);
+                    break;
+                case 6:
+                    finalMessage = new PingMessage(br);
+                    break;
+            }
+
+            return finalMessage;
+        }
     }
 }

@@ -1,7 +1,6 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
-using System;
 
 namespace PleaseResync
 {
@@ -14,23 +13,19 @@ namespace PleaseResync
         internal protected override Device[] AllDevices => _allDevices;
 
         private readonly Device[] _allDevices;
+        private List<Device> _spectators;
         private readonly SessionAdapter _sessionAdapter;
 
         private Sync _sync;
         private Device _localDevice;
+        private uint _numSpectators;
 
-        // events
-        private const int MinSuggestionTime = 3;
-        private Queue<SessionEvent> _sessionEvents;
-        private int _nextSuggestedWait;
-
-        public Peer2PeerSession(uint inputSize, uint deviceCount, uint totalPlayerCount, SessionAdapter adapter) : base(inputSize, deviceCount, totalPlayerCount)
+        public Peer2PeerSession(uint inputSize, uint deviceCount, uint totalPlayerCount, bool offline, SessionAdapter adapter) : base(inputSize, deviceCount, totalPlayerCount, offline)
         {
             _allDevices = new Device[deviceCount];
+            _spectators = new List<Device>();
             _sessionAdapter = adapter;
-            _sync = new Sync(_allDevices, inputSize);
-            _nextSuggestedWait = 0;
-            _sessionEvents = new Queue<SessionEvent>(32);
+            _sync = new Sync(_allDevices, inputSize, offline, _spectators);
         }
 
         public override void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)
@@ -42,6 +37,8 @@ namespace PleaseResync
             _localDevice = new Device(this, deviceId, playerCount, Device.DeviceType.Local);
             _allDevices[deviceId] = LocalDevice;
             _sync.SetLocalDevice(deviceId, playerCount, frameDelay);
+
+            if (OfflinePlay) _localDevice.State = Device.DeviceState.Running;
         }
 
         public override void AddRemoteDevice(uint deviceId, uint playerCount, object remoteConfiguration)
@@ -56,8 +53,21 @@ namespace PleaseResync
             _sync.AddRemoteDevice(deviceId, playerCount);
         }
 
+        public override void AddSpectatorDevice(object remoteConfiguration)
+        { 
+            uint spectatorId = uint.MaxValue - _numSpectators;
+            _sessionAdapter.AddRemote(spectatorId, remoteConfiguration);
+            _spectators.Add(new Device(this, spectatorId, 0, Device.DeviceType.Spectator));
+            Platform.Log($"New spectator created with Id: {spectatorId}");
+            _spectators.Last().StartSyncing();
+            _numSpectators++;
+        }
+
         public override void Poll()
         {
+            //We don't wanna deal with networking if we're playing offline
+            if (OfflinePlay) return;
+
             Debug.Assert(_allDevices.All(device => device != null), "All devices must be Set/Added before calling Poll");
 
             if (!IsRunning())
@@ -66,59 +76,76 @@ namespace PleaseResync
                 {
                     device.Sync();
                 }
+
+                foreach (var spectator in _spectators)
+                {
+                    spectator.Sync();
+                }
             }
 
+            _sync.LookForDisconnectedDevices();
+
             var messages = _sessionAdapter.ReceiveFrom();
+            if (messages.Count == 0)
+            {
+                foreach (var device in _allDevices)
+                {
+                    if (device.Type == Device.DeviceType.Remote)
+                        device.TestConnection();
+                }
+
+                foreach (var spectator in _spectators)
+                {
+                    spectator.TestConnection();
+                }
+                return;
+            }
+
             foreach (var (_, deviceId, message) in messages)
             {
-                System.Console.WriteLine($"Received message from remote device {deviceId}: {message}");
-                _allDevices[deviceId].HandleMessage(message);
+                //Platform.Log($"Received message from remote device {deviceId}: {message}");
+                if  (deviceId <= DeviceCount) {
+                    _allDevices[deviceId].HandleMessage(message);
+                } else {
+                    int idx = (int)(uint.MaxValue - deviceId);
+                    _spectators[idx].HandleMessage(message);
+                }
             }
         }
 
         public override bool IsRunning()
         {
-            return _allDevices.All(device => device.State == Device.DeviceState.Running);
+            return 
+                _allDevices.All(device => device.State == Device.DeviceState.Running) &&
+                _spectators.All(device => device.State != Device.DeviceState.Syncing);
         }
 
         public override List<SessionAction> AdvanceFrame(byte[] localInput)
         {
             Debug.Assert(IsRunning(), "Session must be running before calling AdvanceFrame");
-
-            // should be called after polling the remote devices for their messages.
             Debug.Assert(localInput != null);
 
             Poll();
-
-            var actions = _sync.AdvanceSync(_localDevice.Id, localInput);
-            CheckWaitSuggestion();
-
-            return actions;
+            return _sync.AdvanceSync(_localDevice.Id, localInput);
         }
 
-        private void CheckWaitSuggestion()
+        internal protected override uint SendMessageTo(uint deviceId, DeviceMessage message)
         {
-            if (_sync.LocalFrame() > _nextSuggestedWait && _sync.LocalFrameAdvantage() >= MinSuggestionTime)
-            {
-                _nextSuggestedWait = _sync.LocalFrame() + MinSuggestionTime;
-                var suggestedWait = new WaitSuggestionEvent { Frames = (uint)_sync.LocalFrameAdvantage() };
-                AddSessionEvent(suggestedWait);
-            }
-        }
-
-        protected internal override uint SendMessageTo(uint deviceId, DeviceMessage message)
-        {
-            System.Console.WriteLine($"Sending message to remote device {deviceId}: {message}");
+            //Platform.Log($"Sending message to remote device {deviceId}: {message}");
             return _sessionAdapter.SendTo(deviceId, message);
         }
 
-        protected internal override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
+        internal protected override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
         {
+            if (message == null) return;
 
             uint inputCount = (message.EndFrame - message.StartFrame) + 1;
+
+            if (inputCount <= 0) return;
+            
             uint inputSize = (uint)(message.Input.Length / inputCount);
 
-            System.Console.WriteLine($"Recieved Inputs For Frames {message.StartFrame} to {message.EndFrame}. count: {inputCount}. size per input: {inputSize}");
+            //Platform.Log($"Recieved Inputs For Frames {message.StartFrame} to {message.EndFrame}. count: {inputCount}. size per input: {inputSize}");
 
             int inputIndex = 0;
             for (uint i = message.StartFrame; i <= message.EndFrame; i++)
@@ -126,20 +153,19 @@ namespace PleaseResync
                 byte[] inputsForFrame = new byte[message.Input.Length / inputCount];
 
                 System.Array.Copy(message.Input, inputIndex * inputSize, inputsForFrame, 0, inputSize);
-                _sync.AddRemoteInput(deviceId, (int)i, inputsForFrame);
+                _sync.AddRemoteInput(deviceId, (int)i, message.Advantage, inputsForFrame);
 
                 inputIndex++;
             }
         }
 
-        public override Queue<SessionEvent> Events()
-        {
-            return _sessionEvents;
-        }
-
-        protected internal override void AddSessionEvent(SessionEvent ev)
-        {
-            _sessionEvents.Enqueue(ev);
-        }
+        public override int Frame() => _sync.Frame();
+        public override int RemoteFrame() => _sync.RemoteFrame();
+        public override int FrameAdvantage() => _sync.FramesAhead();
+        public override int RemoteFrameAdvantage() => _sync.FramesAhead();
+        public override int FrameAdvantageDifference() => _sync.FrameDifference();
+        public override uint RollbackFrames() => _sync.RollbackFrames();
+        public override uint AverageRollbackFrames() => _sync.AverageRollbackFrames();
+        public override int State() => (int)_sync.State();
     }
 }

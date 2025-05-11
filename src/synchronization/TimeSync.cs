@@ -1,21 +1,24 @@
-﻿namespace PleaseResync
+namespace PleaseResync
 {
     internal class TimeSync
     {
         public const int InitialFrame = 0;
-        public const int MaxRollbackFrames = 7;
-        public const int FrameAdvLimit = 4;
+        public const int MaxRollbackFrames = 8;
+        public const int FrameAdvantageLimit = 2;
+
         public int SyncFrame;
         public int LocalFrame;
         public int RemoteFrame;
-        public int RemoteFrameAdvantage;
         public int LocalFrameAdvantage;
+        public int RemoteFrameAdvantage;
+        public int FrameAdvantageDifference;
+
         public TimeSync()
         {
             SyncFrame = InitialFrame;
             LocalFrame = InitialFrame;
             RemoteFrame = InitialFrame;
-            RemoteFrameAdvantage = 0;
+            RemoteFrameAdvantage = InitialFrame;
             LocalFrameAdvantage = 0;
         }
 
@@ -43,11 +46,11 @@
             // Set variables
             RemoteFrame = minRemoteFrame;
             RemoteFrameAdvantage = maxRemoteFrameAdvantage;
-            // How far the client is ahead of the last reported frame by the remote clients           
+            // How far the client is ahead of the last reported frame by the remote clients
             LocalFrameAdvantage = LocalFrame - RemoteFrame;
-            int frameAdvDiff = LocalFrameAdvantage - RemoteFrameAdvantage;
+            FrameAdvantageDifference = LocalFrameAdvantage - RemoteFrameAdvantage;
             // Only allow the local client to get so far ahead of remote.
-            return LocalFrameAdvantage < MaxRollbackFrames && frameAdvDiff <= FrameAdvLimit;
+            return LocalFrameAdvantage < MaxRollbackFrames && FrameAdvantageDifference <= FrameAdvantageLimit;
         }
 
         public bool ShouldRollback()
