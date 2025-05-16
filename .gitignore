@@ -8,3 +8,5 @@ perfs/BenchmarkDotNet.Artifacts
 .vscode
 /.vs
 /examples/obj
+/examples/RollbackBalls/bin/Debug/net8.0
+/examples/RollbackBalls/obj
