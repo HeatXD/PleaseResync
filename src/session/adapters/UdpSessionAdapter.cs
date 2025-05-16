@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using MessagePack;
 using System.Net;
 using System.Net.Sockets;
@@ -24,7 +24,7 @@ namespace PleaseResync
             {
                 _udpClient.Client.IOControl((IOControlCode)SIO_UDP_CONNRESET, new byte[] { 0, 0, 0, 0 }, null);
             }
-            _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            //_udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             _udpClient.Client.Bind(endpoint);
             _remoteEndpoints = new Dictionary<uint, IPEndPoint>();
             _remoteReceiveEndpoint = default(IPEndPoint);

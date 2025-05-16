@@ -7,3 +7,4 @@ perfs/obj
 perfs/BenchmarkDotNet.Artifacts
 .vscode
 /.vs
+/examples/obj

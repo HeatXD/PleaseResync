@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -12,7 +12,7 @@ namespace PleaseResync
             public readonly uint InputSize;
             private readonly int _initialFrameBuffer;
             private int _currentFrame, _availableFrame;
-            private readonly List<byte[]> _frameInputs;
+            private readonly List<byte> _frameInputs;
 
             public BroadcastStream(int initialBuffer = 30, uint inputSize = 1)
             {
@@ -20,7 +20,7 @@ namespace PleaseResync
                 _initialFrameBuffer = initialBuffer;
                 _currentFrame = 0;
                 _availableFrame = -1;
-                _frameInputs = new List<byte[]>(_initialFrameBuffer);
+                _frameInputs = new List<byte>((int)(_initialFrameBuffer * inputSize));
             }
 
             public void AddFrameInput(int frame, byte[] input)
@@ -31,8 +31,7 @@ namespace PleaseResync
                     return;
                 }
                 // add the input to the buffer
-                _frameInputs.Add(new byte[InputSize]);
-                Array.Copy(input, _frameInputs.Last(), InputSize);
+                _frameInputs.AddRange(input);
                 // be ready to accept the following frames.
                 _availableFrame++;
             }
@@ -41,21 +40,20 @@ namespace PleaseResync
             {
                 frame = 0;
                 input = null;
-                // we want our buffer to build up first for smooth broadcasting
-                if (_availableFrame <= _initialFrameBuffer)
+
+                // return false if we haven't buffered enough frames yet for smooth playback
+                // or if we've already processed all available frames.
+                if (_availableFrame <= _initialFrameBuffer || _currentFrame > _availableFrame)
                 {
                     return false;
                 }
-                // we can only fetch the input if its available in the buffer
-                if (_currentFrame > _availableFrame)
-                {
-                    return false;
-                }
-                // copy the input from the buffer into the input array
+
+                int inputSize = (int)InputSize;
                 frame = _currentFrame;
-                input = new byte[InputSize];
-                Array.Copy(_frameInputs[_currentFrame], input, InputSize);
-                // advance to the next broadcast frame
+
+                input = new byte[inputSize];
+                _frameInputs.CopyTo(inputSize * _currentFrame, input, 0, inputSize);
+
                 _currentFrame++;
                 return true;
             }
