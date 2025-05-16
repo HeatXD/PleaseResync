@@ -1,8 +1,8 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Collections.Generic;
 using System;
 
-namespace PleaseResync
+namespace PleaseResync.session
 {
     public class Device
     {
@@ -86,11 +86,11 @@ namespace PleaseResync
 
         public void Sync()
         {
-            uint now = Platform.GetCurrentTimeMS();
+            var now = Platform.GetCurrentTimeMS();
 
             if (Type != DeviceType.Local)
             {
-                uint interval = _syncRoundtripsRemaining == NUM_SYNC_ROUNDTRIPS ? SYNC_FIRST_RETRY_INTERVAL : SYNC_NEXT_RETRY_INTERVAL;
+                var interval = _syncRoundtripsRemaining == NUM_SYNC_ROUNDTRIPS ? SYNC_FIRST_RETRY_INTERVAL : SYNC_NEXT_RETRY_INTERVAL;
                 if (_lastSendTime + interval < now)
                 {
                     _syncRoundtripsRandomRequest = Platform.GetRandomUnsignedShort();

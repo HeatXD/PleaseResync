@@ -1,8 +1,10 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Collections.Generic;
 using System;
+using PleaseResync.input;
+using PleaseResync.session;
 
-namespace PleaseResync
+namespace PleaseResync.synchronization
 {
     internal class Sync
     {
@@ -74,7 +76,7 @@ namespace PleaseResync
             // should be called after polling the remote devices for their messages.
             Debug.Assert(deviceInput != null);
 
-            bool isTimeSynced = _offlinePlay ? true : _timeSync.IsTimeSynced(_devices);
+            var isTimeSynced = _offlinePlay ? true : _timeSync.IsTimeSynced(_devices);
             _syncState = isTimeSynced ? SyncState.RUNNING : SyncState.SYNCING;
 
             UpdateSyncFrame();
@@ -94,7 +96,7 @@ namespace PleaseResync
                 if (_timeSync.ShouldRollback())
                 {
                     actions.Add(new SessionLoadGameAction(_timeSync.SyncFrame, _stateStorage));
-                    for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
+                    for (var i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
                     {
                         actions.Add(new SessionAdvanceFrameAction(i, GetFrameInput(i).Inputs));
                         actions.Add(new SessionSaveGameAction(i, _stateStorage));
@@ -138,11 +140,11 @@ namespace PleaseResync
             // no spectators? dont send inputs
             if (_spectators.Count == 0) return;
 
-            int maxFrame = _timeSync.SyncFrame;
-            int minFrame = Math.Max(0, maxFrame - (TimeSync.MaxRollbackFrames - 1));
+            var maxFrame = _timeSync.SyncFrame;
+            var minFrame = Math.Max(0, maxFrame - (TimeSync.MaxRollbackFrames - 1));
 
             // if the spectators are keeping up well we can shorten the range
-            int minAck = int.MaxValue;
+            var minAck = int.MaxValue;
             foreach (var spectator in _spectators)
             {
                 if (spectator.State == Device.DeviceState.Running) 
@@ -158,7 +160,7 @@ namespace PleaseResync
 
             // send the inputs
             var sendInput = new List<byte>();
-            for (int i = minFrame; i <= maxFrame; i++)
+            for (var i = minFrame; i <= maxFrame; i++)
             {
                 sendInput.AddRange(GetFrameInput(i).Inputs);
             }
@@ -179,9 +181,9 @@ namespace PleaseResync
 
         private uint GetAverageRollbackFrames()
         {
-            float sumFrames = 0f;
+            var sumFrames = 0f;
             
-            for(int i = 0; i < rollbackFrames.Length; i++)
+            for(var i = 0; i < rollbackFrames.Length; i++)
             {
                 sumFrames += rollbackFrames[i];
             }
@@ -237,13 +239,13 @@ namespace PleaseResync
                     //uint limitFrames = TimeSync.MaxRollbackFrames - 1;
                     //uint startingFrame = _timeSync.LocalFrame <= limitFrames ? 0 : (uint)_timeSync.LocalFrame - limitFrames;
 
-                    uint startingFrame = (uint)_timeSync.SyncFrame;
+                    var startingFrame = (uint)_timeSync.SyncFrame;
 
-                    uint finalFrame = (uint)(_timeSync.LocalFrame + _deviceInputs[localDeviceId].GetFrameDelay());
+                    var finalFrame = (uint)(_timeSync.LocalFrame + _deviceInputs[localDeviceId].GetFrameDelay());
 
                     var combinedInput = new List<byte>();
 
-                    for (uint i = startingFrame; i <= finalFrame; i++)
+                    for (var i = startingFrame; i <= finalFrame; i++)
                     {
                         combinedInput.AddRange(GetDeviceInput((int)i, localDeviceId).Inputs);
                     }
@@ -261,14 +263,14 @@ namespace PleaseResync
 
         private void SendHealthCheck()
         {
-            int frame = _timeSync.LocalFrame - HealthCheckFramesBehind;
+            var frame = _timeSync.LocalFrame - HealthCheckFramesBehind;
             if (frame <= 0) return;
 
-            uint checksum = _stateStorage.GetChecksum(frame);
+            var checksum = _stateStorage.GetChecksum(frame);
 
             if (_lastSentChecksum == checksum) return;
 
-            if (_timeSync.LocalFrame > 0 && (_timeSync.LocalFrame % HealthCheckTime) == 0)
+            if (_timeSync.LocalFrame > 0 && _timeSync.LocalFrame % HealthCheckTime == 0)
             {
                 foreach (var device in _devices)
                 {
@@ -292,7 +294,7 @@ namespace PleaseResync
             {
                 if (device.Type == Device.DeviceType.Remote)
                 {
-                    foreach ((int, uint) health in device.Health)
+                    foreach (var health in device.Health)
                     {
                         if (!_stateStorage.CompareChecksums(health.Item1, health.Item2))
                         {
@@ -310,14 +312,14 @@ namespace PleaseResync
         private void UpdateSyncFrame()
         {
             if (_offlinePlay) return;
-            int finalFrame = _timeSync.RemoteFrame;
+            var finalFrame = _timeSync.RemoteFrame;
             if (_timeSync.RemoteFrame > _timeSync.LocalFrame)
             {
                 finalFrame = _timeSync.LocalFrame;
             }
-            bool foundMistake = false;
-            int foundFrame = finalFrame;
-            for (int i = _timeSync.SyncFrame + 1; i <= finalFrame; i++)
+            var foundMistake = false;
+            var foundFrame = finalFrame;
+            for (var i = _timeSync.SyncFrame + 1; i <= finalFrame; i++)
             {
                 foreach (var input in _deviceInputs)
                 {

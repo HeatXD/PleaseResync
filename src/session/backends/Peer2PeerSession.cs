@@ -1,8 +1,9 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
+using PleaseResync.synchronization;
 
-namespace PleaseResync
+namespace PleaseResync.session.backends
 {
     /// <summary>
     /// Peer2PeerSession implements a session for devices wanting to play your game together via network.
@@ -55,7 +56,7 @@ namespace PleaseResync
 
         public override void AddSpectatorDevice(object remoteConfiguration)
         { 
-            uint spectatorId = uint.MaxValue - _numSpectators;
+            var spectatorId = uint.MaxValue - _numSpectators;
             _sessionAdapter.AddRemote(spectatorId, remoteConfiguration);
             _spectators.Add(new Device(this, spectatorId, 0, Device.DeviceType.Spectator));
             Platform.Log($"New spectator created with Id: {spectatorId}");
@@ -107,7 +108,7 @@ namespace PleaseResync
                 if  (deviceId <= DeviceCount) {
                     _allDevices[deviceId].HandleMessage(message);
                 } else {
-                    int idx = (int)(uint.MaxValue - deviceId);
+                    var idx = (int)(uint.MaxValue - deviceId);
                     _spectators[idx].HandleMessage(message);
                 }
             }
@@ -139,18 +140,18 @@ namespace PleaseResync
         {
             if (message == null) return;
 
-            uint inputCount = (message.EndFrame - message.StartFrame) + 1;
+            var inputCount = message.EndFrame - message.StartFrame + 1;
 
             if (inputCount <= 0) return;
             
-            uint inputSize = (uint)(message.Input.Length / inputCount);
+            var inputSize = (uint)(message.Input.Length / inputCount);
 
             //Platform.Log($"Recieved Inputs For Frames {message.StartFrame} to {message.EndFrame}. count: {inputCount}. size per input: {inputSize}");
 
-            int inputIndex = 0;
-            for (uint i = message.StartFrame; i <= message.EndFrame; i++)
+            var inputIndex = 0;
+            for (var i = message.StartFrame; i <= message.EndFrame; i++)
             {
-                byte[] inputsForFrame = new byte[message.Input.Length / inputCount];
+                var inputsForFrame = new byte[message.Input.Length / inputCount];
 
                 System.Array.Copy(message.Input, inputIndex * inputSize, inputsForFrame, 0, inputSize);
                 _sync.AddRemoteInput(deviceId, (int)i, message.Advantage, inputsForFrame);

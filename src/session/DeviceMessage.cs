@@ -1,6 +1,6 @@
 ﻿using MessagePack;
 
-namespace PleaseResync
+namespace PleaseResync.session
 {
     [Union(0, typeof(DeviceSyncMessage))]
     [Union(1, typeof(DeviceSyncConfirmMessage))]

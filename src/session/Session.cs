@@ -1,9 +1,9 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Collections.Generic;
 using System.Net;
 using System;
 
-namespace PleaseResync
+namespace PleaseResync.session
 {
     /// <summary>
     /// Session is responsible for managing a pool of devices wanting to play your game together.

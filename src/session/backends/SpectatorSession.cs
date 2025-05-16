@@ -2,62 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using PleaseResync.session;
+using PleaseResync.session.backends.utility;
 
-namespace PleaseResync
+namespace PleaseResync.session.backends
 {
-    public class SpectatorSession : Session
+    public partial class SpectatorSession : Session
     {
-        public class BroadcastStream
-        {
-            public readonly uint InputSize;
-            private readonly int _initialFrameBuffer;
-            private int _currentFrame, _availableFrame;
-            private readonly List<byte> _frameInputs;
-
-            public BroadcastStream(int initialBuffer = 30, uint inputSize = 1)
-            {
-                InputSize = inputSize;
-                _initialFrameBuffer = initialBuffer;
-                _currentFrame = 0;
-                _availableFrame = -1;
-                _frameInputs = new List<byte>((int)(_initialFrameBuffer * inputSize));
-            }
-
-            public void AddFrameInput(int frame, byte[] input)
-            {
-                // we only accept the inputs for the next frame in order.
-                if (frame != _availableFrame + 1)
-                {
-                    return;
-                }
-                // add the input to the buffer
-                _frameInputs.AddRange(input);
-                // be ready to accept the following frames.
-                _availableFrame++;
-            }
-
-            public bool GetFrameInput(out int frame, out byte[] input)
-            {
-                frame = 0;
-                input = null;
-
-                // return false if we haven't buffered enough frames yet for smooth playback
-                // or if we've already processed all available frames.
-                if (_availableFrame <= _initialFrameBuffer || _currentFrame > _availableFrame)
-                {
-                    return false;
-                }
-
-                int inputSize = (int)InputSize;
-                frame = _currentFrame;
-
-                input = new byte[inputSize];
-                _frameInputs.CopyTo(inputSize * _currentFrame, input, 0, inputSize);
-
-                _currentFrame++;
-                return true;
-            }
-        }
 
         public SpectatorSession(uint inputSize, uint playerCount, SessionAdapter adapter, uint frameDelay = 30)
             : base(inputSize, 1, playerCount, false)
@@ -70,7 +21,7 @@ namespace PleaseResync
         }
         protected internal override Device LocalDevice => null;
 
-        protected internal override Device[] AllDevices => throw new System.NotImplementedException();
+        protected internal override Device[] AllDevices => throw new NotImplementedException();
 
         private Device _broadcastDevice = null;
         private BroadcastStream _broadcastStream = null;
@@ -90,29 +41,29 @@ namespace PleaseResync
             Poll();
 
             var actions = new List<SessionAction>();
-            if (_broadcastStream.GetFrameInput(out int frame, out byte[] input))
+            if (_broadcastStream.GetFrameInput(out var frame, out var input))
                 actions.Add(new SessionAdvanceFrameAction(frame, input));
             return actions;
         }
 
         public override uint AverageRollbackFrames()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public override int Frame()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public override int FrameAdvantage()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public override int FrameAdvantageDifference()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public override bool IsRunning()
@@ -143,38 +94,38 @@ namespace PleaseResync
 
         public override int RemoteFrame()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public override int RemoteFrameAdvantage()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public override uint RollbackFrames()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public override void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public override int State()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         protected internal override void AddRemoteInput(uint deviceId, DeviceInputMessage message)
         {
             if (deviceId != _broadcastDevice.Id) return; // discard messages from other devices
-            uint count = (message.EndFrame - message.StartFrame) + 1;
-            int inpSize = (int)_broadcastStream.InputSize;
+            var count = message.EndFrame - message.StartFrame + 1;
+            var inpSize = (int)_broadcastStream.InputSize;
             //GD.Print($"Recieved Inputs For Frames {message.StartFrame} to {message.EndFrame} length: {message.Input.Length}, count: {count}, size per input: {inpSize}");
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
-                int newFrame = (int)(i + message.StartFrame);
+                var newFrame = (int)(i + message.StartFrame);
                 _broadcastStream.AddFrameInput(newFrame, message.Input.Skip(i * inpSize).ToArray());
                 SendMessageTo(_broadcastDevice.Id, new DeviceInputAckMessage { Frame = (uint)newFrame });
             }

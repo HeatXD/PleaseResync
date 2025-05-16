@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Diagnostics;
 
-namespace PleaseResync
+namespace PleaseResync.input
 {
     internal class GameInput
     {
@@ -30,7 +30,7 @@ namespace PleaseResync
         public void SetInputs(uint offset, uint playerCount, byte[] deviceInputs)
         {
             Debug.Assert(deviceInputs != null);
-            Debug.Assert(offset + (playerCount * InputSize) <= Inputs.Length);
+            Debug.Assert(offset + playerCount * InputSize <= Inputs.Length);
             Debug.Assert(deviceInputs.Length == playerCount * InputSize);
 
             Array.Copy(deviceInputs, 0, Inputs, offset * InputSize, deviceInputs.Length);

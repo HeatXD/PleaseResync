@@ -4,8 +4,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using PleaseResync.session;
 
-namespace PleaseResync
+namespace PleaseResync.session.adapters
 {
     public class UdpSessionAdapter : SessionAdapter
     {
@@ -27,7 +28,7 @@ namespace PleaseResync
             //_udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             _udpClient.Client.Bind(endpoint);
             _remoteEndpoints = new Dictionary<uint, IPEndPoint>();
-            _remoteReceiveEndpoint = default(IPEndPoint);
+            _remoteReceiveEndpoint = default;
         }
 
         public UdpSessionAdapter(ushort localPort) : this(new IPEndPoint(IPAddress.Any, localPort))

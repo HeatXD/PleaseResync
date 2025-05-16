@@ -1,4 +1,6 @@
-namespace PleaseResync
+﻿using PleaseResync.session;
+
+namespace PleaseResync.synchronization
 {
     internal class TimeSync
     {
@@ -24,8 +26,8 @@ namespace PleaseResync
 
         public bool IsTimeSynced(Device[] devices)
         {
-            int minRemoteFrame = int.MaxValue;
-            int maxRemoteFrameAdvantage = int.MinValue;
+            var minRemoteFrame = int.MaxValue;
+            var maxRemoteFrameAdvantage = int.MinValue;
 
             foreach (var device in devices)
             {
