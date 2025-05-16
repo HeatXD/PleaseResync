@@ -154,7 +154,7 @@ namespace PleaseResync.session.backends
                 var inputsForFrame = new byte[message.Input.Length / inputCount];
 
                 System.Array.Copy(message.Input, inputIndex * inputSize, inputsForFrame, 0, inputSize);
-                _sync.AddRemoteInput(deviceId, (int)i, message.Advantage, inputsForFrame);
+                _sync.AddRemoteInput(deviceId, (int)i, (int)message.Advantage, inputsForFrame);
 
                 inputIndex++;
             }

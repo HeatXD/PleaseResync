@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using PleaseResync.session;
 using PleaseResync.session.backends.utility;
 
 namespace PleaseResync.session.backends
 {
-    public partial class SpectatorSession : Session
+    public class SpectatorSession : Session
     {
 
         public SpectatorSession(uint inputSize, uint playerCount, SessionAdapter adapter, uint frameDelay = 30)
