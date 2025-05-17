@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System;
 
-namespace PleaseResync
+namespace PleaseResync.session
 {
     public class Device
     {
@@ -19,7 +19,7 @@ namespace PleaseResync
         {
             Syncing,
             Running,
-            Disconnected,
+            Disconnected
         }
 
         #endregion
@@ -43,6 +43,13 @@ namespace PleaseResync
         private const uint NUM_SYNC_ROUNDTRIPS = 5;
         private const uint SYNC_NEXT_RETRY_INTERVAL = 2000;
         private const uint SYNC_FIRST_RETRY_INTERVAL = 500;
+        private const ushort CONNECTION_TEST_LIMIT = 300;
+        //The ping's final value is always a value minimum of ~33 miliseconds
+        //This is the duration of 2 game ticks and doesn't relate to the
+        //network's quality. This value exists to exclude this extra from the final result.
+        private const int PING_ERRROR_MARGIN = 33;
+
+        private ushort connectionTest;
 
         private readonly Session _session;
 
@@ -50,7 +57,10 @@ namespace PleaseResync
         private uint _syncRoundtripsRemaining;
         private ushort _syncRoundtripsRandomRequest;
         private Queue<DeviceMessageQueueEntry> _sendQueue;
+        public List<(int, uint)> Health = new List<(int, uint)>();
 
+
+        private uint RTT = 0;
         #endregion
 
         public Device(Session session, uint deviceId, uint playerCount, DeviceType deviceType)
@@ -76,15 +86,16 @@ namespace PleaseResync
 
         public void Sync()
         {
-            uint now = Platform.GetCurrentTimeMS();
+            var now = Platform.GetCurrentTimeMS();
 
-            if (Type == Device.DeviceType.Remote)
+            if (Type != DeviceType.Local)
             {
-                uint interval = _syncRoundtripsRemaining == NUM_SYNC_ROUNDTRIPS ? SYNC_FIRST_RETRY_INTERVAL : SYNC_NEXT_RETRY_INTERVAL;
+                var interval = _syncRoundtripsRemaining == NUM_SYNC_ROUNDTRIPS ? SYNC_FIRST_RETRY_INTERVAL : SYNC_NEXT_RETRY_INTERVAL;
                 if (_lastSendTime + interval < now)
                 {
                     _syncRoundtripsRandomRequest = Platform.GetRandomUnsignedShort();
                     SendMessage(new DeviceSyncMessage { DeviceId = Id, PlayerCount = PlayerCount, RandomRequest = _syncRoundtripsRandomRequest });
+                    //GD.Print($"Sent SyncMsg To Device {Id}: T({Type})");
                 }
             }
         }
@@ -99,10 +110,16 @@ namespace PleaseResync
         public void FinishedSyncing()
         {
             State = DeviceState.Running;
-            var ev = new DeviceSyncedEvent { DeviceId = Id };
-            _session.AddSessionEvent(ev);
+            //SendMessage(new PingMessage { PingTime = Platform.GetCurrentTimeMS(), Returning = false });
+            //var ev = new DeviceSyncedEvent { DeviceId = Id };
+            //_session.AddSessionEvent(ev);
         }
 
+        public void EndConnection()
+        {
+            Platform.Log($"Connection lost with Device {Id}: T({Type})");
+            State = DeviceState.Disconnected;
+        }
         #endregion
 
         #region Sending and Receiving messages
@@ -119,11 +136,11 @@ namespace PleaseResync
             switch (message)
             {
                 case DeviceSyncMessage syncMessage:
-                    Debug.Assert(syncMessage.PlayerCount == _session.AllDevices[syncMessage.DeviceId].PlayerCount);
+                    Debug.Assert(Type == DeviceType.Spectator || _session.LocalDevice == null || syncMessage.PlayerCount == _session.AllDevices[syncMessage.DeviceId].PlayerCount);
                     SendMessage(new DeviceSyncConfirmMessage { DeviceId = Id, PlayerCount = PlayerCount, RandomResponse = syncMessage.RandomRequest });
                     break;
                 case DeviceSyncConfirmMessage syncConfirmMessage:
-                    Debug.Assert(syncConfirmMessage.PlayerCount == _session.AllDevices[syncConfirmMessage.DeviceId].PlayerCount);
+                    Debug.Assert(Type == DeviceType.Spectator || _session.LocalDevice == null || syncConfirmMessage.PlayerCount == _session.AllDevices[syncConfirmMessage.DeviceId].PlayerCount);
                     if (syncConfirmMessage.RandomResponse == _syncRoundtripsRandomRequest)
                     {
                         _syncRoundtripsRemaining -= 1;
@@ -140,16 +157,34 @@ namespace PleaseResync
                     break;
                 case DeviceInputMessage inputMessage:
                     _session.AddRemoteInput(Id, inputMessage);
-                    for (uint i = inputMessage.StartFrame; i <= inputMessage.EndFrame; i++)
-                    {
-                        if (LastAckedInputFrame + 1 == i)
-                            LastAckedInputFrame = i;
-                    }
                     break;
                 case DeviceInputAckMessage inputAckMessage:
                     UpdateAckedInputFrame(inputAckMessage);
                     break;
+                case HealthCheckMessage healthCheckMessage:
+                    Health.Add((healthCheckMessage.Frame, healthCheckMessage.Checksum));
+                    break;
+                case PingMessage pingMessage:
+                    if (!pingMessage.Returning)
+                    {
+                        SendMessage(new PingMessage { PingTime = pingMessage.PingTime, Returning = true });
+                        //GD.Print($"Pinging Back (Time: {pingMessage.PingTime})");
+                    }
+                    else
+                        RTT = Platform.GetCurrentTimeMS() - pingMessage.PingTime;
+                        //GD.Print($"Ping is {RTT} ms");
+                    break;
             }
+            connectionTest = 0;
+        }
+
+        public void TestConnection()
+        {
+            if (State == DeviceState.Disconnected) return;
+
+            connectionTest++;
+            if (connectionTest >= CONNECTION_TEST_LIMIT)
+                EndConnection();
         }
 
         private void UpdateAckedInputFrame(DeviceInputAckMessage inputAckMessage)
@@ -168,6 +203,7 @@ namespace PleaseResync
             }
         }
 
+        public int GetRTT() => Math.Max(0, (int)RTT - PING_ERRROR_MARGIN);
         #endregion
     }
 

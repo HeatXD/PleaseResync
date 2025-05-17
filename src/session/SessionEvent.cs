@@ -1,4 +1,4 @@
-namespace PleaseResync
+﻿namespace PleaseResync.session
 {
     public abstract class SessionEvent
     {

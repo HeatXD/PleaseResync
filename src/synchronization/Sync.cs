@@ -1,28 +1,47 @@
 ﻿using System.Diagnostics;
 using System.Collections.Generic;
 using System;
+using PleaseResync.input;
+using PleaseResync.session;
 
-namespace PleaseResync
+namespace PleaseResync.synchronization
 {
     internal class Sync
     {
+        public enum SyncState { SYNCING, RUNNING, DEVICE_LOST, DESYNCED }
+
         private readonly uint _inputSize;
         private readonly Device[] _devices;
+        private readonly List<Device> _spectators;
 
         private TimeSync _timeSync;
         private InputQueue[] _deviceInputs;
         private StateStorage _stateStorage;
 
-        public Sync(Device[] devices, uint inputSize)
+        private const int HealthCheckFramesBehind = 10;
+        private const byte HealthCheckTime = 30;
+        private const byte PingWaitTime = 30;
+        private bool _offlinePlay;
+
+        private SyncState _syncState;
+
+        private uint _lastSentChecksum;
+        private uint[] rollbackFrames;
+
+        public Sync(Device[] devices, uint inputSize, bool offline, List<Device> spectators = null)
         {
             _devices = devices;
             _inputSize = inputSize;
+            _offlinePlay = offline;
             _timeSync = new TimeSync();
             _stateStorage = new StateStorage(TimeSync.MaxRollbackFrames);
             _deviceInputs = new InputQueue[_devices.Length];
+            _syncState = SyncState.SYNCING;
+            _spectators = spectators ?? new List<Device>();
+            rollbackFrames = new uint[16];
         }
 
-        public void AddRemoteInput(uint deviceId, int frame, byte[] deviceInput)
+        public void AddRemoteInput(uint deviceId, int frame, int advantage, byte[] deviceInput)
         {
             // only allow adding input to the local device
             Debug.Assert(_devices[deviceId].Type == Device.DeviceType.Remote);
@@ -30,16 +49,11 @@ namespace PleaseResync
             if (_devices[deviceId].RemoteFrame < frame)
             {
                 _devices[deviceId].RemoteFrame = frame;
-                _devices[deviceId].RemoteFrameAdvantage = _timeSync.LocalFrame - frame;
+                _devices[deviceId].RemoteFrameAdvantage = advantage;//_timeSync.LocalFrame - frame;
                 // let them know u recieved the packet
                 _devices[deviceId].SendMessage(new DeviceInputAckMessage { Frame = (uint)frame });
             }
             AddDeviceInput(frame, deviceId, deviceInput);
-        }
-
-        public uint FramesAhead()
-        {
-            return (uint)_timeSync.LocalFrameAdvantage;
         }
 
         public void SetLocalDevice(uint deviceId, uint playerCount, uint frameDelay)
@@ -52,84 +66,260 @@ namespace PleaseResync
             _deviceInputs[deviceId] = new InputQueue(_inputSize, playerCount);
         }
 
+        public void AddSpectatorDevice(uint deviceId)
+        {
+            _deviceInputs[deviceId] = new InputQueue(_inputSize, 1);
+        }
+
         public List<SessionAction> AdvanceSync(uint localDeviceId, byte[] deviceInput)
         {
             // should be called after polling the remote devices for their messages.
             Debug.Assert(deviceInput != null);
 
-            bool isTimeSynced = _timeSync.IsTimeSynced(_devices);
+            var isTimeSynced = _offlinePlay ? true : _timeSync.IsTimeSynced(_devices);
+            _syncState = isTimeSynced ? SyncState.RUNNING : SyncState.SYNCING;
 
             UpdateSyncFrame();
 
             var actions = new List<SessionAction>();
 
-            // create savestate at the initialFrame to support rolling back to it
-            // for example if initframe = 0 then 0 will be first save option to rollback to.
-            if (_timeSync.LocalFrame == TimeSync.InitialFrame)
+            if (!_offlinePlay)
             {
-                actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
-            }
-
-            // rollback update
-            if (_timeSync.ShouldRollback())
-            {
-                actions.Add(new SessionLoadGameAction(_timeSync.SyncFrame, _stateStorage));
-                for (int i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
+                // create savestate at the initialFrame to support rolling back to it
+                // for example if initframe = 0 then 0 will be first save option to rollback to.
+                if (_timeSync.LocalFrame == TimeSync.InitialFrame)
                 {
-                    actions.Add(new SessionAdvanceFrameAction(i, GetFrameInput(i).Inputs));
-                    actions.Add(new SessionSaveGameAction(i, _stateStorage));
+                    actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
+                }
+
+                // rollback update
+                if (_timeSync.ShouldRollback())
+                {
+                    actions.Add(new SessionLoadGameAction(_timeSync.SyncFrame, _stateStorage));
+                    for (var i = _timeSync.SyncFrame + 1; i <= _timeSync.LocalFrame; i++)
+                    {
+                        actions.Add(new SessionAdvanceFrameAction(i, GetFrameInput(i).Inputs));
+                        actions.Add(new SessionSaveGameAction(i, _stateStorage));
+                    }
+
+                    Platform.Log($"Rollback detected from frame {_timeSync.SyncFrame + 1} to frame {_timeSync.LocalFrame} ({RollbackFrames() + 1} frames)");
+                }
+
+                PingDevices();
+                HealthCheck();
+
+                // always send spectator inputs regardless of time sync
+                SendSpectatorInputs();
+
+                if (isTimeSynced)
+                {
+                    _timeSync.LocalFrame++;
+
+                    AddLocalInput(localDeviceId, deviceInput);
+                    SendLocalInputs(localDeviceId);
+
+                    actions.Add(new SessionAdvanceFrameAction(_timeSync.LocalFrame, GetFrameInput(_timeSync.LocalFrame).Inputs));
+                    actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
                 }
             }
-
-            if (isTimeSynced)
+            else
             {
                 _timeSync.LocalFrame++;
 
                 AddLocalInput(localDeviceId, deviceInput);
-                SendLocalInputs(localDeviceId);
 
                 actions.Add(new SessionAdvanceFrameAction(_timeSync.LocalFrame, GetFrameInput(_timeSync.LocalFrame).Inputs));
-                actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
             }
+            rollbackFrames[_timeSync.LocalFrame % rollbackFrames.Length] = RollbackFrames();
 
             return actions;
         }
 
-        public void SendLocalInputs(uint localDeviceId)
+        private void SendSpectatorInputs()
         {
+            // no spectators? dont send inputs
+            if (_spectators.Count == 0) return;
+
+            var maxFrame = _timeSync.SyncFrame;
+            var minFrame = Math.Max(0, maxFrame - (TimeSync.MaxRollbackFrames - 1));
+
+            // if the spectators are keeping up well we can shorten the range
+            var minAck = int.MaxValue;
+            foreach (var spectator in _spectators)
+            {
+                if (spectator.State == Device.DeviceState.Running) 
+                {
+                    minAck = (int)Math.Min(spectator.LastAckedInputFrame, minAck);
+                }
+            }
+
+            if(minAck != int.MaxValue)
+            {
+                minFrame = Math.Max(minFrame, minAck);
+            }
+
+            // send the inputs
+            var sendInput = new List<byte>();
+            for (var i = minFrame; i <= maxFrame; i++)
+            {
+                sendInput.AddRange(GetFrameInput(i).Inputs);
+            }
+
+            //GD.Print($"maxFrame: {maxFrame}, minFrame: {minFrame}, ackframe: {minAck}, inplength: {sendInput.Count}");
+
+            foreach (var spectator in _spectators)
+            {
+                spectator.SendMessage(new DeviceInputMessage
+                {
+                    Advantage = 0,
+                    StartFrame = (uint)minFrame,
+                    EndFrame = (uint)maxFrame,
+                    Input = sendInput.ToArray()
+                });
+            }
+        }
+
+        private uint GetAverageRollbackFrames()
+        {
+            var sumFrames = 0f;
+            
+            for(var i = 0; i < rollbackFrames.Length; i++)
+            {
+                sumFrames += rollbackFrames[i];
+            }
+
+            sumFrames /= rollbackFrames.Length;
+
+            return (uint)Math.Round(sumFrames);
+        }
+
+        private void HealthCheck()
+        {
+            SendHealthCheck();
+            CheckHealth();
+        }
+
+        private void PingDevices()
+        {
+            if (Frame() % PingWaitTime != 1) return;
+
             foreach (var device in _devices)
             {
                 if (device.Type == Device.DeviceType.Remote)
                 {
-                    uint finalFrame = (uint)(_timeSync.LocalFrame + _deviceInputs[localDeviceId].GetFrameDelay());
+                    device.SendMessage(new PingMessage { PingTime = Platform.GetCurrentTimeMS(), Returning = false });
+                    //GD.Print($"Pinging to device {device.Id} (Time: {Platform.GetCurrentTimeMS()})");
+                }
+            }
+        }
+
+        public void LookForDisconnectedDevices()
+        {
+            if (_syncState == SyncState.DESYNCED) return;
+
+            foreach (var device in _devices)
+            {
+                if (device.State == Device.DeviceState.Disconnected)
+                {
+                    _syncState = SyncState.DEVICE_LOST;
+                }
+            }
+        }
+
+        private void SendLocalInputs(uint localDeviceId)
+        {
+            //Don't send inputs if it's a spectator
+            if (_devices[localDeviceId].Type == Device.DeviceType.Spectator) return;
+
+            foreach (var device in _devices)
+            {
+                if (device.Type == Device.DeviceType.Remote)
+                {
+                    //Replaced the fixed value by SyncFrame, no issues so far
+                    //uint limitFrames = TimeSync.MaxRollbackFrames - 1;
+                    //uint startingFrame = _timeSync.LocalFrame <= limitFrames ? 0 : (uint)_timeSync.LocalFrame - limitFrames;
+
+                    var startingFrame = (uint)_timeSync.SyncFrame;
+
+                    var finalFrame = (uint)(_timeSync.LocalFrame + _deviceInputs[localDeviceId].GetFrameDelay());
 
                     var combinedInput = new List<byte>();
 
-                    for (uint i = device.LastAckedInputFrame; i <= finalFrame; i++)
+                    for (var i = startingFrame; i <= finalFrame; i++)
                     {
                         combinedInput.AddRange(GetDeviceInput((int)i, localDeviceId).Inputs);
                     }
 
                     device.SendMessage(new DeviceInputMessage
                     {
-                        StartFrame = device.LastAckedInputFrame,
+                        StartFrame = startingFrame,
                         EndFrame = finalFrame,
+                        Advantage = (uint)_timeSync.LocalFrameAdvantage,
                         Input = combinedInput.ToArray()
                     });
                 }
             }
         }
 
+        private void SendHealthCheck()
+        {
+            var frame = _timeSync.LocalFrame - HealthCheckFramesBehind;
+            if (frame <= 0) return;
+
+            var checksum = _stateStorage.GetChecksum(frame);
+
+            if (_lastSentChecksum == checksum) return;
+
+            if (_timeSync.LocalFrame > 0 && _timeSync.LocalFrame % HealthCheckTime == 0)
+            {
+                foreach (var device in _devices)
+                {
+                    if (device.Type == Device.DeviceType.Remote)
+                    {
+                        device.SendMessage(new HealthCheckMessage
+                        {
+                            Frame = frame,
+                            Checksum = checksum
+                        });
+                        //GD.Print($"Sending HealthCheck message: {frame}, {checksum}");
+                    }
+                }
+                _lastSentChecksum = checksum;
+            }
+        }
+
+        private void CheckHealth()
+        {
+            foreach (var device in _devices)
+            {
+                if (device.Type == Device.DeviceType.Remote)
+                {
+                    foreach (var health in device.Health)
+                    {
+                        if (!_stateStorage.CompareChecksums(health.Item1, health.Item2))
+                        {
+                            device.State = Device.DeviceState.Disconnected;
+                            _syncState = SyncState.DESYNCED;
+                            Platform.Log($"State mismatch found.({health.Item2} : {_stateStorage.GetChecksum(health.Item1)})", Platform.DebugType.Error);
+                            break;
+                        }
+                    }
+                    device.Health.Clear();
+                }
+            }
+        }
+
         private void UpdateSyncFrame()
         {
-            int finalFrame = _timeSync.RemoteFrame;
+            if (_offlinePlay) return;
+            var finalFrame = _timeSync.RemoteFrame;
             if (_timeSync.RemoteFrame > _timeSync.LocalFrame)
             {
                 finalFrame = _timeSync.LocalFrame;
             }
-            bool foundMistake = false;
-            int foundFrame = finalFrame;
-            for (int i = _timeSync.SyncFrame + 1; i <= finalFrame; i++)
+            var foundMistake = false;
+            var foundFrame = finalFrame;
+            for (var i = _timeSync.SyncFrame + 1; i <= finalFrame; i++)
             {
                 foreach (var input in _deviceInputs)
                 {
@@ -197,8 +387,13 @@ namespace PleaseResync
             return input;
         }
 
-        internal int LocalFrame() => _timeSync.LocalFrame;
-
-        internal int LocalFrameAdvantage() => _timeSync.LocalFrameAdvantage;
+        public int Frame() => _timeSync.LocalFrame;
+        public int RemoteFrame() => _timeSync.RemoteFrame;
+        public int FramesAhead() => _timeSync.LocalFrameAdvantage;
+        public int RemoteFramesAhead() => _timeSync.RemoteFrameAdvantage;
+        public int FrameDifference() => _timeSync.FrameAdvantageDifference;
+        public uint RollbackFrames() => (uint)Math.Max(0, _timeSync.LocalFrame - (_timeSync.SyncFrame + 1));
+        public uint AverageRollbackFrames() => GetAverageRollbackFrames();
+        public SyncState State() => _syncState;
     }
 }

@@ -1,11 +1,13 @@
 ﻿using MessagePack;
 
-namespace PleaseResync
+namespace PleaseResync.session
 {
     [Union(0, typeof(DeviceSyncMessage))]
     [Union(1, typeof(DeviceSyncConfirmMessage))]
     [Union(2, typeof(DeviceInputMessage))]
     [Union(3, typeof(DeviceInputAckMessage))]
+    [Union(4, typeof(HealthCheckMessage))]
+    [Union(5, typeof(PingMessage))]
     [MessagePackObject]
     public abstract class DeviceMessage
     {
@@ -43,13 +45,15 @@ namespace PleaseResync
     public class DeviceInputMessage : DeviceMessage
     {
         [Key(1)]
-        public uint StartFrame;
+        public uint Advantage;
         [Key(2)]
-        public uint EndFrame;
+        public uint StartFrame;
         [Key(3)]
+        public uint EndFrame;
+        [Key(4)]
         public byte[] Input;
 
-        public override string ToString() { return $"{typeof(DeviceInputMessage)}: {new { StartFrame, EndFrame, Input }}"; }
+        public override string ToString() { return $"{typeof(DeviceInputMessage)}: {new { Advantage, StartFrame, EndFrame, Input }}"; }
     }
 
     [MessagePackObject]
@@ -59,5 +63,27 @@ namespace PleaseResync
         public uint Frame;
 
         public override string ToString() { return $"{typeof(DeviceInputAckMessage)}: {new { Frame }}"; }
+    }
+
+    [MessagePackObject]
+    public class HealthCheckMessage : DeviceMessage
+    {
+        [Key(1)]
+        public int Frame;
+        [Key(2)]
+        public uint Checksum;
+
+        public override string ToString() { return $"{typeof(HealthCheckMessage)}: {new { Frame, Checksum }}"; }
+    }
+
+    [MessagePackObject]
+    public class PingMessage : DeviceMessage
+    {
+        [Key(1)]
+        public uint PingTime;
+        [Key(2)]
+        public bool Returning;
+
+        public override string ToString() { return $"{typeof(PingMessage)}: {new { PingTime, Returning }}"; }
     }
 }

@@ -1,34 +1,26 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 
-namespace PleaseResync
+namespace PleaseResync.input
 {
     internal class InputQueue
     {
         public const int QueueSize = 128;
         private uint _frameDelay;
-        private uint _inputSize;
-        private uint _playerCount;
         private GameInput[] _inputs;
         private GameInput[] _lastPredictedInputs;
 
         public InputQueue(uint inputSize, uint playerCount, uint frameDelay = 0)
         {
-            _inputSize = inputSize;
             _frameDelay = frameDelay;
-            _playerCount = playerCount;
             _inputs = new GameInput[QueueSize];
             _lastPredictedInputs = new GameInput[QueueSize];
 
-            for (int i = 0; i < _inputs.Length; i++)
+            for (var i = 0; i < _inputs.Length; i++)
             {
-                _inputs[i] = EmptyInput();
-                _lastPredictedInputs[i] = EmptyInput();
+                _inputs[i] = new GameInput(GameInput.NullFrame, inputSize, playerCount);
+                _lastPredictedInputs[i] = new GameInput(GameInput.NullFrame, inputSize, playerCount);
             }
-        }
-
-        public GameInput EmptyInput()
-        {
-            return new GameInput(GameInput.NullFrame, _inputSize, _playerCount);
         }
 
         public GameInput GetPredictedInput(int frame)
@@ -51,7 +43,7 @@ namespace PleaseResync
         {
             Debug.Assert(frame >= 0);
 
-            int frameOffset = frame % QueueSize;
+            var frameOffset = frame % QueueSize;
             // predict if needed
             if (predict)
             {
@@ -75,10 +67,10 @@ namespace PleaseResync
         public void ResetPrediction(int frame)
         {
             // when resetting the prediction we just make the frame a null frame.
-            int frameOffset = frame % QueueSize;
+            var frameOffset = frame % QueueSize;
             _lastPredictedInputs[frameOffset].Frame = GameInput.NullFrame;
         }
 
-        private int PreviousFrame(int offset) => (((offset) == 0) ? (QueueSize - 1) : ((offset) - 1));
+        private int PreviousFrame(int offset) => offset == 0 ? QueueSize - 1 : offset - 1;
     }
 }
