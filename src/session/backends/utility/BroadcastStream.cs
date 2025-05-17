@@ -7,7 +7,7 @@ namespace PleaseResync.session.backends.utility
         public readonly uint InputSize;
         private readonly int _initialFrameBuffer;
         private int _currentFrame, _availableFrame;
-        private readonly List<byte> _frameInputs;
+        private readonly List<byte> _frameBuffer;
 
         public BroadcastStream(int initialBuffer = 30, uint inputSize = 1)
         {
@@ -15,19 +15,22 @@ namespace PleaseResync.session.backends.utility
             _initialFrameBuffer = initialBuffer;
             _currentFrame = 0;
             _availableFrame = -1;
-            _frameInputs = new List<byte>((int)(_initialFrameBuffer * inputSize));
+            _frameBuffer = new List<byte>((int)(initialBuffer * inputSize));
         }
 
         public void AddFrameInput(int frame, byte[] input)
         {
-            // we only accept the inputs for the next frame in order.
-            if (frame != _availableFrame + 1)
+            if (frame != _availableFrame + 1 || input.Length < InputSize)
             {
                 return;
             }
-            // add the input to the buffer
-            _frameInputs.AddRange(input);
-            // be ready to accept the following frames.
+
+            // Append input to flat buffer
+            for (int i = 0; i < InputSize; i++)
+            {
+                _frameBuffer.Add(input[i]);
+            }
+
             _availableFrame++;
         }
 
@@ -36,18 +39,24 @@ namespace PleaseResync.session.backends.utility
             frame = 0;
             input = null;
 
-            // return false if we haven't buffered enough frames yet for smooth playback
-            // or if we've already processed all available frames.
-            if (_availableFrame <= _initialFrameBuffer || _currentFrame > _availableFrame)
+            if (_availableFrame - _currentFrame < _initialFrameBuffer)
             {
                 return false;
             }
 
-            var inputSize = (int)InputSize;
-            frame = _currentFrame;
+            if (_currentFrame > _availableFrame)
+            {
+                return false;
+            }
 
-            input = new byte[inputSize];
-            _frameInputs.CopyTo(inputSize * _currentFrame, input, 0, inputSize);
+            frame = _currentFrame;
+            input = new byte[InputSize];
+
+            int startIndex = (int)(_currentFrame * InputSize);
+            for (int i = 0; i < InputSize; i++)
+            {
+                input[i] = _frameBuffer[startIndex + i];
+            }
 
             _currentFrame++;
             return true;

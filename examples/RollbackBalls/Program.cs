@@ -24,5 +24,6 @@ if (!idFound)
     Console.WriteLine("Error: id argument is mandatory. Use id=X where X is a single character.");
     return;
 }
+
 Console.WriteLine($"ID:{id}, spec:{spectate}");
 RollbackBalls.RollbackBalls.Init(id, spectate);

@@ -5,7 +5,7 @@ using Raylib_cs;
 
 namespace RollbackBalls
 {
-    internal class Game
+    public class Game
     {
         public int[,] Position;
 

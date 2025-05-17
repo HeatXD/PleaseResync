@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Authors>HeatXD, JonathanPicques</Authors>
-    <Version>1.0.4</Version>
+    <Authors>HeatXD</Authors>
+    <Version>1.0.5</Version>
     <Description>Rollback Networking Library Written in C#</Description>
     <RepositoryUrl>https://github.com/HeatXD/PleaseResync</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
