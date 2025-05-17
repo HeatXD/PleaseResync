@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.IO;
 using LiteNetLib;
 using System.Net.Sockets;
 using System.Collections.Generic;
