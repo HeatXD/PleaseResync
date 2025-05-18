@@ -35,14 +35,15 @@ namespace PleaseResync.session.adapters
         public uint SendTo(uint deviceId, DeviceMessage message)
         {
             var packet = MessagePackSerializer.Serialize(message);
-            foreach (var peer in _netManager.ConnectedPeerList)
+            var remAddr = _remoteEndpoints[deviceId];
+            var peer = _netManager.FirstOrDefault(p => remAddr.Equals(p));
+
+            if (peer != null)
             {
-                if (peer.Port == _remoteEndpoints[deviceId].Port)
-                {
-                    peer.Send(packet, DeliveryMethod.Unreliable);
-                    return (uint)packet.Length;
-                }
+                peer.Send(packet, DeliveryMethod.Unreliable);
+                return (uint)packet.Length;
             }
+
             return 0;
         }
 
