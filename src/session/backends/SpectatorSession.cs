@@ -22,6 +22,8 @@ namespace PleaseResync.session.backends
 
         protected internal override Device[] AllDevices => throw new NotImplementedException();
 
+
+        private int _currentFrame = 0;
         private Device _broadcastDevice = null;
         private BroadcastStream _broadcastStream = null;
         private readonly SessionAdapter _sessionAdapter;
@@ -41,7 +43,15 @@ namespace PleaseResync.session.backends
 
             var actions = new List<SessionAction>();
             if (_broadcastStream.GetFrameInput(out var frame, out var input))
+            {
+                _currentFrame = frame;
                 actions.Add(new SessionAdvanceFrameAction(frame, input));
+
+                if (frame == 1000|| frame == 5000 || frame == 10000)
+                {
+                    _broadcastStream.SaveToFile();
+                }
+            }
             return actions;
         }
 
@@ -52,7 +62,7 @@ namespace PleaseResync.session.backends
 
         public override int Frame()
         {
-            throw new NotImplementedException();
+            return _currentFrame;
         }
 
         public override int FrameAdvantage()
@@ -121,7 +131,7 @@ namespace PleaseResync.session.backends
             if (deviceId != _broadcastDevice.Id) return; // discard messages from other devices
             var count = message.EndFrame - message.StartFrame + 1;
             var inpSize = (int)_broadcastStream.InputSize;
-            //GD.Print($"Recieved Inputs For Frames {message.StartFrame} to {message.EndFrame} length: {message.Input.Length}, count: {count}, size per input: {inpSize}");
+
             for (var i = 0; i < count; i++)
             {
                 var newFrame = (int)(i + message.StartFrame);

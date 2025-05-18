@@ -14,8 +14,11 @@ namespace RollbackBalls
             Position = new int[2, 2] { { 20000, 30000 }, { 40000, 30000 } };
         }
 
-        public void Draw()
+        public void Draw(Session session)
         {
+            Raylib.DrawFPS(500,0);
+            Raylib.DrawText($"Frame: {session.Frame()}", 0, 550, 24, Color.White);
+
             int players = Position.GetLength(0);
             for (int i = 0; i < players; i++)
             {
@@ -157,7 +160,7 @@ namespace RollbackBalls
                 Raylib.BeginDrawing();
                 Raylib.ClearBackground(Color.Black);
 
-                game.Draw();
+                game.Draw(Session);
 
                 Raylib.EndDrawing();
             }

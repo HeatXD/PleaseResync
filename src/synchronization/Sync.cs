@@ -76,6 +76,9 @@ namespace PleaseResync.synchronization
             // should be called after polling the remote devices for their messages.
             Debug.Assert(deviceInput != null);
 
+            // properly handle disconnected player by making them add empty inputs
+            HandleDisconnectedDevices();
+
             var isTimeSynced = _offlinePlay ? true : _timeSync.IsTimeSynced(_devices);
             _syncState = isTimeSynced ? SyncState.RUNNING : SyncState.SYNCING;
 
@@ -135,6 +138,23 @@ namespace PleaseResync.synchronization
             return actions;
         }
 
+        private void HandleDisconnectedDevices()
+        {
+            for (uint i = 0; i < _devices.Length; i++)
+            {
+                var device = _devices[i];
+                if (device.State == Device.DeviceState.Disconnected)
+                {
+                    int min = device.RemoteFrame;
+                    int local = Frame();
+                    for (int j = min; j < local; j++)
+                    {
+                        AddRemoteInput(i, j, 0, new byte[_inputSize]);
+                    }
+                }
+            }
+        }
+
         private void SendSpectatorInputs()
         {
             // no spectators? dont send inputs
@@ -164,8 +184,6 @@ namespace PleaseResync.synchronization
             {
                 sendInput.AddRange(GetFrameInput(i).Inputs);
             }
-
-            //GD.Print($"maxFrame: {maxFrame}, minFrame: {minFrame}, ackframe: {minAck}, inplength: {sendInput.Count}");
 
             foreach (var spectator in _spectators)
             {
@@ -208,7 +226,6 @@ namespace PleaseResync.synchronization
                 if (device.Type == Device.DeviceType.Remote)
                 {
                     device.SendMessage(new PingMessage { PingTime = Platform.GetCurrentTimeMS(), Returning = false });
-                    //GD.Print($"Pinging to device {device.Id} (Time: {Platform.GetCurrentTimeMS()})");
                 }
             }
         }
@@ -281,7 +298,6 @@ namespace PleaseResync.synchronization
                             Frame = frame,
                             Checksum = checksum
                         });
-                        //GD.Print($"Sending HealthCheck message: {frame}, {checksum}");
                     }
                 }
                 _lastSentChecksum = checksum;

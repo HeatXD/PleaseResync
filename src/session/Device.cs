@@ -95,7 +95,6 @@ namespace PleaseResync.session
                 {
                     _syncRoundtripsRandomRequest = Platform.GetRandomUnsignedShort();
                     SendMessage(new DeviceSyncMessage { DeviceId = Id, PlayerCount = PlayerCount, RandomRequest = _syncRoundtripsRandomRequest });
-                    //GD.Print($"Sent SyncMsg To Device {Id}: T({Type})");
                 }
             }
         }
@@ -168,11 +167,9 @@ namespace PleaseResync.session
                     if (!pingMessage.Returning)
                     {
                         SendMessage(new PingMessage { PingTime = pingMessage.PingTime, Returning = true });
-                        //GD.Print($"Pinging Back (Time: {pingMessage.PingTime})");
                     }
                     else
                         RTT = Platform.GetCurrentTimeMS() - pingMessage.PingTime;
-                        //GD.Print($"Ping is {RTT} ms");
                     break;
             }
             connectionTest = 0;

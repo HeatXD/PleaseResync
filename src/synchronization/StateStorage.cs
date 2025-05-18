@@ -26,7 +26,6 @@ namespace PleaseResync.synchronization
 
             _states[frame % _size].Buffer = Platform.CloneByteArray(stateBuffer);
             _states[frame % _size].Checksum = stateChecksum;
-            //Godot.GD.Print($"Saved state at frame {frame} with checksum {stateChecksum}");
         }
 
         public StateStorageEntry LoadFrame(int frame)
@@ -39,7 +38,6 @@ namespace PleaseResync.synchronization
 
         public bool CompareChecksums(int frame, uint checksum)
         {
-            //Godot.GD.Print($"Checksum comparison: Frame:({frame} :: {_states[frame % _size].Checksum}), {checksum}");
             if (_states[frame % _size].Checksum == 0 || checksum == 0) return true;
             
             return _states[frame % _size].Checksum == checksum;

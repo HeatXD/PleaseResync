@@ -1,15 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-
-[assembly: InternalsVisibleTo("PleaseResync.Perf")]
-[assembly: InternalsVisibleTo("PleaseResync.Test")]
 
 namespace PleaseResync
 {
     internal static class Platform
     {
-        private readonly static System.Random RandomNumberGenerator = new System.Random();
+        private readonly static Random RandomNumberGenerator = new();
         public enum DebugType{ Log, Warning, Error};
 
         public static uint GetCurrentTimeMS()
@@ -29,14 +26,7 @@ namespace PleaseResync
             Array.Copy(array, 0, newArray, 0, array.Length);
             return newArray;
         }
-        public static uint GetChecksum(byte[] byteArray)
-        {
-            ushort[] newArray = new ushort[(int)Math.Ceiling(byteArray.Length / 2.0)];
-            Buffer.BlockCopy(byteArray, 0, newArray, 0, byteArray.Length);
-            //return FletcherChecksum(newArray, newArray.Length / 2);
-            //return (uint)FletcherChecksumAlt(byteArray, 32);
-            return FletcherChecksum(newArray, newArray.Length);
-        }
+
         //https://en.wikipedia.org/wiki/Fletcher%27s_checksum
         public static uint FletcherChecksum(ushort[] data, int len)
         {
@@ -64,6 +54,7 @@ namespace PleaseResync
         }
         public static void Log(string message = "", DebugType type = DebugType.Log)
         {
+#if DEBUG
             switch (type)
             {
                 case DebugType.Log:
@@ -76,68 +67,59 @@ namespace PleaseResync
                     Console.WriteLine($"ERROR: {message}");
                     break;
             }
+#endif
         }
 
-        //Another Fletcher's Checksum algorithm for testing
-        /// <summary>
-		/// Transforms byte array into an enumeration of blocks of 'blockSize' bytes
-		/// </summary>
-		/// <param name="inputAsBytes"></param>
-		/// <param name="blockSize"></param>
-		/// <returns></returns>
-		private static IEnumerable<UInt64> Blockify(byte[] inputAsBytes, int blockSize)
-		{
-			int i = 0;
+        public static List<byte> RLEEncode(List<byte> toEncode)
+        {
+            if (toEncode == null || toEncode.Count == 0)
+                return [];
 
-			//UInt64 used since that is the biggest possible value we can return.
-			//Using an unsigned type is important - otherwise an arithmetic overflow will result
-			UInt64 block = 0;
-			
-			//Run through all the bytes			
-			while(i < inputAsBytes.Length)
-			{
-				//Keep stacking them side by side by shifting left and OR-ing				
-				block = block << 8 | inputAsBytes[i];
-				
-				i++;
-				
-				//Return a block whenever we meet a boundary
-				if(i % blockSize == 0 || i == inputAsBytes.Length)
-				{
-					yield return block;
-					
-					//Set to 0 for next iteration
-					block = 0;
-				}
-			}
-		}
-		
-		/// <summary>
-		/// Get Fletcher's checksum, n can be either 16, 32 or 64
-		/// </summary>
-		/// <param name="inputWord"></param>
-		/// <param name="n"></param>
-		/// <returns></returns>
-		public static ulong FletcherChecksumAlt(byte[] inputAsBytes, int n)
-		{
-			//Fletcher 16: Read a single byte
-			//Fletcher 32: Read a 16 bit block (two bytes)
-			//Fletcher 64: Read a 32 bit block (four bytes)
-			int bytesPerCycle = n / 16;
-			
-			//2^x gives max value that can be stored in x bits
-			//no of bits here is 8 * bytesPerCycle (8 bits to a byte)
-			ulong modValue = (ulong) (Math.Pow(2, 8 * bytesPerCycle) - 1);
+            var bytes = new List<byte>();
+            byte count = 1;
+            byte current = toEncode[0];
 
-			ulong sum1 = 0;
-			ulong sum2 = 0;
-			foreach (ulong block in Blockify(inputAsBytes, bytesPerCycle))
-			{					
-				sum1 = (sum1 + block) % modValue;
-				sum2 = (sum2 + sum1) % modValue;
-			}
-				
-			return sum1 + (sum2 * (modValue+1));
-		}
-	}
+            for (int i = 1; i < toEncode.Count; i++)
+            {
+                if (toEncode[i] == current && count < byte.MaxValue)
+                {
+                    count++;
+                }
+                else
+                {
+                    bytes.Add(count);
+                    bytes.Add(current);
+                    current = toEncode[i];
+                    count = 1;
+                }
+            }
+
+            // add the last run
+            bytes.Add(count);
+            bytes.Add(current);
+
+            return bytes;
+        }
+
+        public static List<byte> RLEDecode(List<byte> data)
+        {
+            if (data == null || data.Count % 2 != 0)
+                throw new ArgumentException("Invalid RLE data. Must be in (count, value) pairs.");
+
+            var result = new List<byte>();
+
+            for (int i = 0; i < data.Count; i += 2)
+            {
+                byte count = data[i];
+                byte value = data[i + 1];
+
+                for (int j = 0; j < count; j++)
+                {
+                    result.Add(value);
+                }
+            }
+
+            return result;
+        }
+    }
 }

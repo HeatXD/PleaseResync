@@ -40,19 +40,19 @@ namespace PleaseResync.input
         {
             if (!inputsOnly && Frame != other.Frame)
             {
-                Console.WriteLine("frames don't match: {0}, {1}", Frame, other.Frame);
+                Platform.Log($"frames don't match: {Frame}, {other.Frame}");
             }
             if (InputSize != other.InputSize)
             {
-                Console.WriteLine("inputsize for a single player doesn't match: {0}, {1}", InputSize, other.InputSize);
+                Platform.Log($"inputsize for a single player doesn't match: {InputSize}, {other.InputSize}");
             }
             if (Inputs.Length != other.Inputs.Length)
             {
-                Console.WriteLine("inputs array length don't match: {0}, {1}", Inputs.Length, other.Inputs.Length);
+                Platform.Log($"inputs array length don't match: {Inputs.Length}, {other.Inputs.Length}");
             }
             if (!Inputs.SequenceEqual(other.Inputs))
             {
-                Console.WriteLine("inputs don't match\n");
+                Platform.Log("inputs don't match");
             }
             Debug.Assert(Inputs.Length > 0 && other.Inputs.Length > 0);
             return (inputsOnly || Frame == other.Frame) &&

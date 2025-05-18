@@ -20,10 +20,7 @@ namespace PleaseResync.session.backends.utility
 
         public void AddFrameInput(int frame, byte[] input)
         {
-            if (frame != _availableFrame + 1 || input.Length < InputSize)
-            {
-                return;
-            }
+            if (frame != _availableFrame + 1) return;
 
             // Append input to flat buffer
             for (int i = 0; i < InputSize; i++)
@@ -60,6 +57,11 @@ namespace PleaseResync.session.backends.utility
 
             _currentFrame++;
             return true;
+        }
+
+        public void SaveToFile()
+        {
+            ReplayFile.SaveToFile(InputSize, _availableFrame, [], _frameBuffer);
         }
     }
 }

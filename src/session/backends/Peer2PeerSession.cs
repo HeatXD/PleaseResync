@@ -117,7 +117,7 @@ namespace PleaseResync.session.backends
         public override bool IsRunning()
         {
             return 
-                _allDevices.All(device => device.State == Device.DeviceState.Running) &&
+                _allDevices.All(device => device.State != Device.DeviceState.Syncing) &&
                 _spectators.All(device => device.State != Device.DeviceState.Syncing);
         }
 
