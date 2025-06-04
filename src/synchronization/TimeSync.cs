@@ -1,6 +1,6 @@
-﻿using PleaseResync.session;
+﻿using PleaseResync.Session;
 
-namespace PleaseResync.synchronization
+namespace PleaseResync.Synchronization
 {
     internal class TimeSync
     {

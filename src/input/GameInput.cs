@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Diagnostics;
 
-namespace PleaseResync.input
+namespace PleaseResync.Input
 {
     internal class GameInput
     {

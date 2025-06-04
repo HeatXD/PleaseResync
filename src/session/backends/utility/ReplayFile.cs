@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using MessagePack;
 
-namespace PleaseResync.session.backends.utility
+namespace PleaseResync.Session.Backends.Utility
 {
     [MessagePackObject]
     public class ReplayFile
@@ -22,14 +21,10 @@ namespace PleaseResync.session.backends.utility
         [Key(3)]
         public List<byte> InputFrames;
 
-        [Key(4)]
-        public List<byte> MetaData;
-
-        public void Init(uint inputSize, List<byte> initialState, List<byte> metaData)
+        public void Init(uint inputSize, List<byte> initialState)
         {
             InputSize = inputSize;
             InitialState = new(initialState);
-            MetaData = new(metaData);
         }
 
         public void SetData(int numFrames, List<byte> inputFrames)
@@ -49,8 +44,8 @@ namespace PleaseResync.session.backends.utility
 
             var compressed = Platform.RLEEncode(rawData.ToList());
 
-            string fileName = $"{Guid.NewGuid():N}.PRReplay";
-            string fullPath = Path.Combine(folderPath, fileName);
+            var fileName = $"{Guid.NewGuid():N}.PRReplay";
+            var fullPath = Path.Combine(folderPath, fileName);
 
             File.WriteAllBytes(fullPath, compressed.ToArray());
             return fullPath;
@@ -67,7 +62,7 @@ namespace PleaseResync.session.backends.utility
 
             var file = MessagePackSerializer.Deserialize<ReplayFile>(rawData.ToArray());
 
-            Init(file.InputSize, file.InitialState, file.MetaData);
+            Init(file.InputSize, file.InitialState);
             SetData(file.NumFrames, file.InputFrames);
         }
     }

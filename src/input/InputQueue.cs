@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
-namespace PleaseResync.input
+namespace PleaseResync.Input
 {
     internal class InputQueue
     {

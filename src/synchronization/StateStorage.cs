@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace PleaseResync.synchronization
+namespace PleaseResync.Synchronization
 {
     internal class StateStorage
     {
