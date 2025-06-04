@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace PleaseResync.session.backends.utility
 {
@@ -8,6 +9,8 @@ namespace PleaseResync.session.backends.utility
         private readonly int _initialFrameBuffer;
         private int _currentFrame, _availableFrame;
         private readonly List<byte> _frameBuffer;
+
+        public ReplayFile Replay;
 
         public BroadcastStream(int initialBuffer = 30, uint inputSize = 1)
         {
@@ -59,9 +62,12 @@ namespace PleaseResync.session.backends.utility
             return true;
         }
 
-        public void SaveToFile()
+        public string SaveToFile()
         {
-            ReplayFile.SaveToFile(InputSize, _availableFrame, [], _frameBuffer);
+            Replay.Init(InputSize, [], []);
+            Replay.SetData(_availableFrame, _frameBuffer);
+            var path = Replay.Save();
+            return path;
         }
     }
 }
