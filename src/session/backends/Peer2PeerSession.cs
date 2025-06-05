@@ -2,8 +2,9 @@
 using System.Diagnostics;
 using System.Collections.Generic;
 using PleaseResync.synchronization;
+using PleaseResync.Session.Backends.Utility;
 
-namespace PleaseResync.session.backends
+namespace PleaseResync.Session.Backends
 {
     /// <summary>
     /// Peer2PeerSession implements a session for devices wanting to play your game together via network.
@@ -126,6 +127,8 @@ namespace PleaseResync.session.backends
             Debug.Assert(IsRunning(), "Session must be running before calling AdvanceFrame");
             Debug.Assert(localInput != null);
 
+            if (Frame() == 1000) SaveToReplayFile();
+
             Poll();
             return _sync.AdvanceSync(_localDevice.Id, localInput);
         }
@@ -168,5 +171,7 @@ namespace PleaseResync.session.backends
         public override uint RollbackFrames() => _sync.RollbackFrames();
         public override uint AverageRollbackFrames() => _sync.AverageRollbackFrames();
         public override int State() => (int)_sync.State();
+
+        public override void SaveToReplayFile() => _sync.SaveToReplayFile();
     }
 }

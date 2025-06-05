@@ -1,9 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Collections.Generic;
-using System.Net;
-using System;
 
-namespace PleaseResync.session
+namespace PleaseResync.Session
 {
     /// <summary>
     /// Session is responsible for managing a pool of devices wanting to play your game together.
@@ -59,8 +57,11 @@ namespace PleaseResync.session
         /// <param name="inputSize">The size in bits of the input for one player.</param>
         /// <param name="deviceCount">The number of devices taking part in this session.</param>
         /// <param name="totalPlayerCount">The total number of players accross all devices taking part in this session.</param>
-        public Session(uint inputSize, uint deviceCount, uint totalPlayerCount, bool offline)
+        public Session(uint inputSize, uint deviceCount, uint totalPlayerCount, bool offline, bool replay = false)
         {
+            // we dont care about any of this when we are replaying
+            if (replay) return;
+
             Debug.Assert(inputSize > 0);
             Debug.Assert(inputSize <= LIMIT_INPUT_SIZE);
             Debug.Assert(deviceCount >= 1);
@@ -118,5 +119,7 @@ namespace PleaseResync.session
         public abstract uint RollbackFrames();
         public abstract uint AverageRollbackFrames();
         public abstract int State();
+
+        public abstract void SaveToReplayFile();
     }
 }

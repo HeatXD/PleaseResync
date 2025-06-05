@@ -1,17 +1,24 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
-namespace PleaseResync.session.backends.utility
+namespace PleaseResync.Session.Backends.Utility
 {
     public class BroadcastStream
     {
-        public readonly uint InputSize;
+        private uint _inputSize;
         private readonly int _initialFrameBuffer;
         private int _currentFrame, _availableFrame;
-        private readonly List<byte> _frameBuffer;
+        private List<byte> _frameBuffer;
+
+        private ReplayFile _replay;
+        private List<byte> _initialState;
 
         public BroadcastStream(int initialBuffer = 30, uint inputSize = 1)
         {
-            InputSize = inputSize;
+            _initialState = [];
+            _replay = new ReplayFile();
+
+            _inputSize = inputSize;
             _initialFrameBuffer = initialBuffer;
             _currentFrame = 0;
             _availableFrame = -1;
@@ -23,7 +30,7 @@ namespace PleaseResync.session.backends.utility
             if (frame != _availableFrame + 1) return;
 
             // Append input to flat buffer
-            for (int i = 0; i < InputSize; i++)
+            for (var i = 0; i < _inputSize; i++)
             {
                 _frameBuffer.Add(input[i]);
             }
@@ -47,10 +54,10 @@ namespace PleaseResync.session.backends.utility
             }
 
             frame = _currentFrame;
-            input = new byte[InputSize];
+            input = new byte[_inputSize];
 
-            int startIndex = (int)(_currentFrame * InputSize);
-            for (int i = 0; i < InputSize; i++)
+            var startIndex = (int)(_currentFrame * _inputSize);
+            for (var i = 0; i < _inputSize; i++)
             {
                 input[i] = _frameBuffer[startIndex + i];
             }
@@ -59,9 +66,42 @@ namespace PleaseResync.session.backends.utility
             return true;
         }
 
-        public void SaveToFile()
+        public string SaveReplayFile()
         {
-            ReplayFile.SaveToFile(InputSize, _availableFrame, [], _frameBuffer);
+            _replay.Init(_inputSize, _initialState);
+            _replay.SetData(_availableFrame, _frameBuffer);
+            var path = _replay.Save();
+            return path;
+        }
+
+        public void LoadReplayFile(string filepath)
+        {
+            _replay.LoadFromFile(filepath);
+
+            _inputSize = _replay.InputSize;
+
+            _currentFrame = 0;
+            _availableFrame = _replay.NumFrames;
+
+            _frameBuffer.InsertRange(0, _replay.InputFrames);
+
+            _initialState.Clear();
+            _initialState.AddRange(_replay.InitialState);
+        }
+
+        public uint InputSize() => _inputSize;
+
+        public byte[] GetInitialState() => _initialState.ToArray();
+
+        public void SetInitialState(byte[] state)
+        {
+            _initialState.Clear();
+            _initialState.AddRange(state);
+        }
+
+        public void SetCurrentFrame(int frame)
+        {
+            _currentFrame = Math.Clamp(frame, 0, _availableFrame);
         }
     }
 }

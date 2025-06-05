@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System;
 
-namespace PleaseResync.session
+namespace PleaseResync.Session
 {
     public class Device
     {

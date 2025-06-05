@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using PleaseResync.session.backends.utility;
+using PleaseResync.Session.Backends.Utility;
 
-namespace PleaseResync.session.backends
+namespace PleaseResync.Session.Backends
 {
     public class SpectatorSession : Session
     {
@@ -46,11 +46,6 @@ namespace PleaseResync.session.backends
             {
                 _currentFrame = frame;
                 actions.Add(new SessionAdvanceFrameAction(frame, input));
-
-                if (frame == 1000|| frame == 5000 || frame == 10000)
-                {
-                    _broadcastStream.SaveToFile();
-                }
             }
             return actions;
         }
@@ -130,7 +125,7 @@ namespace PleaseResync.session.backends
         {
             if (deviceId != _broadcastDevice.Id) return; // discard messages from other devices
             var count = message.EndFrame - message.StartFrame + 1;
-            var inpSize = (int)_broadcastStream.InputSize;
+            var inpSize = (int)_broadcastStream.InputSize();
 
             for (var i = 0; i < count; i++)
             {
@@ -150,5 +145,7 @@ namespace PleaseResync.session.backends
         {
             throw new NotImplementedException();
         }
+
+        public override void SaveToReplayFile() => _broadcastStream.SaveReplayFile();
     }
 }

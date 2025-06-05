@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace PleaseResync.session
+namespace PleaseResync.Session
 {
     /// <summary>
     /// SessionAdapter is the interface used to implement a way for the Session to communicate with remote devices.

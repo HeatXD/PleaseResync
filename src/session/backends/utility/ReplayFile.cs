@@ -1,36 +1,69 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using MessagePack;
 
-namespace PleaseResync.session.backends.utility
+namespace PleaseResync.Session.Backends.Utility
 {
     [MessagePackObject]
     public class ReplayFile
     {
         [Key(0)]
         public uint InputSize;
+
         [Key(1)]
         public int NumFrames;
+
         [Key(2)]
         public List<byte> InitialState;
+
         [Key(3)]
         public List<byte> InputFrames;
 
-        public static void SaveToFile(uint inpSize, int numFrames, List<byte> initState, List<byte> inpFrames)
+        public void Init(uint inputSize, List<byte> initialState)
         {
-            var file = new ReplayFile
-            {
-                InputSize = inpSize,
-                NumFrames = numFrames,
-                InitialState = Platform.RLEEncode(initState),
-                InputFrames = Platform.RLEEncode(inpFrames)
-            };
+            InputSize = inputSize;
+            InitialState = new(initialState);
+        }
 
-            var fileData = MessagePackSerializer.Serialize(file);
-            string fileName = $"{Guid.NewGuid().ToString("N")}.PRReplay";
+        public void SetData(int numFrames, List<byte> inputFrames)
+        {
+            NumFrames = numFrames;
+            InputFrames = new(inputFrames);
+        }
 
-            File.WriteAllBytesAsync(fileName, fileData);
+        public string Save(string folderPath = null)
+        {
+            if (string.IsNullOrWhiteSpace(folderPath))
+                folderPath = "PRReplays";
+
+            Directory.CreateDirectory(folderPath);
+
+            var rawData = MessagePackSerializer.Serialize(this);
+
+            var compressed = Platform.RLEEncode(rawData.ToList());
+
+            var fileName = $"{Guid.NewGuid():N}.PRReplay";
+            var fullPath = Path.Combine(folderPath, fileName);
+
+            File.WriteAllBytes(fullPath, compressed.ToArray());
+            return fullPath;
+        }
+
+        public void LoadFromFile(string filePath)
+        {
+            if (!File.Exists(filePath))
+                throw new FileNotFoundException("Replay file not found.", filePath);
+
+            var compressed = File.ReadAllBytes(filePath);
+
+            var rawData = Platform.RLEDecode(compressed.ToList());
+
+            var file = MessagePackSerializer.Deserialize<ReplayFile>(rawData.ToArray());
+
+            Init(file.InputSize, file.InitialState);
+            SetData(file.NumFrames, file.InputFrames);
         }
     }
 }

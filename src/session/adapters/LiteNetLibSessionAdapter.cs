@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MessagePack;
 
-namespace PleaseResync.session.adapters
+namespace PleaseResync.Session.Adapters
 {
     public class LiteNetLibSessionAdapter : SessionAdapter, INetEventListener
     {

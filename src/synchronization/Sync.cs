@@ -1,8 +1,10 @@
 ﻿using System.Diagnostics;
 using System.Collections.Generic;
 using System;
-using PleaseResync.input;
-using PleaseResync.session;
+using PleaseResync.Input;
+using PleaseResync.Session;
+using PleaseResync.Synchronization;
+using PleaseResync.Session.Backends.Utility;
 
 namespace PleaseResync.synchronization
 {
@@ -28,6 +30,8 @@ namespace PleaseResync.synchronization
         private uint _lastSentChecksum;
         private uint[] rollbackFrames;
 
+        private BroadcastStream _broadcastStream;
+
         public Sync(Device[] devices, uint inputSize, bool offline, List<Device> spectators = null)
         {
             _devices = devices;
@@ -39,6 +43,7 @@ namespace PleaseResync.synchronization
             _syncState = SyncState.SYNCING;
             _spectators = spectators ?? new List<Device>();
             rollbackFrames = new uint[16];
+            _broadcastStream = new BroadcastStream();
         }
 
         public void AddRemoteInput(uint deviceId, int frame, int advantage, byte[] deviceInput)
@@ -85,7 +90,6 @@ namespace PleaseResync.synchronization
             UpdateSyncFrame();
 
             var actions = new List<SessionAction>();
-
             if (!_offlinePlay)
             {
                 // create savestate at the initialFrame to support rolling back to it
@@ -93,6 +97,13 @@ namespace PleaseResync.synchronization
                 if (_timeSync.LocalFrame == TimeSync.InitialFrame)
                 {
                     actions.Add(new SessionSaveGameAction(_timeSync.LocalFrame, _stateStorage));
+                }
+
+                // for replay store the initial gamestate
+                if (_timeSync.LocalFrame == TimeSync.InitialFrame + 1)
+                {
+                    var initialState = _stateStorage.LoadFrame(TimeSync.InitialFrame).Buffer;
+                    _broadcastStream.SetInitialState(initialState);
                 }
 
                 // rollback update
@@ -157,9 +168,6 @@ namespace PleaseResync.synchronization
 
         private void SendSpectatorInputs()
         {
-            // no spectators? dont send inputs
-            if (_spectators.Count == 0) return;
-
             var maxFrame = _timeSync.SyncFrame;
             var minFrame = Math.Max(0, maxFrame - (TimeSync.MaxRollbackFrames - 1));
 
@@ -173,7 +181,7 @@ namespace PleaseResync.synchronization
                 }
             }
 
-            if(minAck != int.MaxValue)
+            if (minAck != int.MaxValue)
             {
                 minFrame = Math.Max(minFrame, minAck);
             }
@@ -182,7 +190,10 @@ namespace PleaseResync.synchronization
             var sendInput = new List<byte>();
             for (var i = minFrame; i <= maxFrame; i++)
             {
-                sendInput.AddRange(GetFrameInput(i).Inputs);
+                var inputs = GetFrameInput(i).Inputs;
+
+                sendInput.AddRange(inputs);
+                _broadcastStream.AddFrameInput(i, inputs);
             }
 
             foreach (var spectator in _spectators)
@@ -411,5 +422,6 @@ namespace PleaseResync.synchronization
         public uint RollbackFrames() => (uint)Math.Max(0, _timeSync.LocalFrame - (_timeSync.SyncFrame + 1));
         public uint AverageRollbackFrames() => GetAverageRollbackFrames();
         public SyncState State() => _syncState;
+        public void SaveToReplayFile() => _broadcastStream.SaveReplayFile(); 
     }
 }

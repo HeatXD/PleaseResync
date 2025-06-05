@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
-using PleaseResync.synchronization;
+using PleaseResync.Synchronization;
 
-namespace PleaseResync.session
+namespace PleaseResync.Session
 {
     /// <summary>
     /// SessionAction is an action you must fulfill to give a chance to the Session to synchronize with other sessions.
